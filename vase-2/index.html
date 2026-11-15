@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaseForge 3D — Parametric Vase Designer & STL Exporter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        studio: {
+                            950: '#0a0b0e',
+                            900: '#111318',
+                            850: '#171a21',
+                            800: '#1e222b',
+                            700: '#2d3340',
+                            600: '#41495c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0b0e;
+            color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Custom Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #252a36;
+            border-radius: 999px;
+            outline: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        input[type="range"]:hover {
+            background: #323949;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 2px solid #e0e7ff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.18);
+            background: #818cf8;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 2px solid #e0e7ff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        /* Custom Scrollbar for Control Panel */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #111318;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #2d3340;
+            border-radius: 999px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #41495c;
+        }
+
+        /* Color Input Styling */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        .glass-panel {
+            background: rgba(17, 19, 24, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Light Mode Theme Overrides */
+        html.light body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        html.light .bg-studio-950,
+        html.light .bg-studio-950\/90,
+        html.light .bg-studio-950\/80,
+        html.light .bg-studio-950\/60 {
+            background-color: #e2e8f0 !important;
+        }
+        html.light .bg-studio-900,
+        html.light .bg-studio-900\/95,
+        html.light .bg-studio-900\/80 {
+            background-color: #ffffff !important;
+        }
+        html.light .bg-studio-850,
+        html.light .bg-studio-850\/90 {
+            background-color: #f8fafc !important;
+        }
+        html.light .bg-studio-800 {
+            background-color: #e2e8f0 !important;
+        }
+        html.light .bg-studio-700 {
+            background-color: #cbd5e1 !important;
+        }
+        html.light .text-white,
+        html.light .text-gray-100,
+        html.light .text-gray-200 {
+            color: #0f172a !important;
+        }
+        html.light .text-gray-300 {
+            color: #334155 !important;
+        }
+        html.light .text-gray-400 {
+            color: #64748b !important;
+        }
+        html.light .text-indigo-300 {
+            color: #4f46e5 !important;
+        }
+        html.light .text-indigo-400 {
+            color: #4338ca !important;
+        }
+        html.light .border-white\/10,
+        html.light .border-white\/5 {
+            border-color: rgba(15, 23, 42, 0.1) !important;
+        }
+        html.light .glass-panel {
+            background: rgba(255, 255, 255, 0.86);
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            color: #0f172a;
+        }
+        html.light input[type="range"] {
+            background: #cbd5e1;
+        }
+        html.light input[type="range"]:hover {
+            background: #94a3b8;
+        }
+        html.light .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        html.light .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+        html.light #tab-btn-dimensions.bg-indigo-600,
+        html.light #tab-btn-surface.bg-indigo-600,
+        html.light #tab-btn-colors.bg-indigo-600 {
+            color: #ffffff !important;
+        }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden bg-studio-950 text-gray-100">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="h-14 shrink-0 bg-studio-900/95 border-b border-white/10 px-4 flex items-center justify-between z-20">
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 3h8l-1.5 5.5a7 7 0 0 0 2.1 7.2L18 17c1.2 1.1 1 3-0.7 3.7a14 14 0 0 1-10.6 0C5 20 4.8 18.1 6 17l1.4-1.3a7 7 0 0 0 2.1-7.2L8 3z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-bold text-sm sm:text-base tracking-tight text-white">VaseForge <span class="text-indigo-400">3D</span></h1>
+                    <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">CAD & STL Studio</span>
+                </div>
+                <p class="text-[11px] text-gray-400 hidden sm:block">Parametric Ceramic & 3D Print Vessel Generator</p>
+            </div>
+        </div>
+
+        <!-- Quick Shape Presets (Center) -->
+        <div class="hidden xl:flex items-center gap-1.5 bg-studio-850 p-1 rounded-xl border border-white/5">
+            <span class="text-[11px] font-medium text-gray-400 px-2.5">Presets:</span>
+            <button onclick="applyPreset('amphora')" class="preset-btn px-2.5 py-1 text-xs font-medium rounded-lg hover:bg-white/10 text-gray-200 transition">Amphora</button>
+            <button onclick="applyPreset('spiral')" class="preset-btn px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-600/25 text-indigo-300 border border-indigo-500/30 transition">Spiral Fluted</button>
+            <button onclick="applyPreset('lowpoly')" class="preset-btn px-2.5 py-1 text-xs font-medium rounded-lg hover:bg-white/10 text-gray-200 transition">Origami Hex</button>
+            <button onclick="applyPreset('ripple')" class="preset-btn px-2.5 py-1 text-xs font-medium rounded-lg hover:bg-white/10 text-gray-200 transition">Harmonic Wave</button>
+            <button onclick="applyPreset('bud')" class="preset-btn px-2.5 py-1 text-xs font-medium rounded-lg hover:bg-white/10 text-gray-200 transition">Slender Bud</button>
+            <button onclick="applyPreset('planter')" class="preset-btn px-2.5 py-1 text-xs font-medium rounded-lg hover:bg-white/10 text-gray-200 transition">Zen Planter</button>
+        </div>
+
+        <!-- Right Actions: Theme Toggle + Randomize + Multi-Format Export -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+            <!-- Dark / Light Mode Toggle -->
+            <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark / Light Mode" class="p-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-white/10 text-xs font-medium text-gray-200 flex items-center gap-1.5 transition active:scale-95">
+                <!-- Sun Icon (shown in Dark Mode) -->
+                <svg id="icon-sun" class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <!-- Moon Icon (shown in Light Mode) -->
+                <svg id="icon-moon" class="w-4 h-4 text-indigo-600 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+                <span id="theme-label" class="hidden md:inline">Light</span>
+            </button>
+
+            <button onclick="randomizeVase()" title="Generate Random Vase" class="px-2.5 py-2 rounded-xl bg-studio-800 hover:bg-studio-700 border border-white/10 text-xs font-medium text-gray-200 flex items-center gap-1.5 transition active:scale-95">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <span class="hidden md:inline">Surprise</span>
+            </button>
+
+            <!-- Multi-Format Export Toolbar (STL, OBJ, GLB, PNG, ALL) -->
+            <div class="flex items-center bg-studio-850 p-1 rounded-xl border border-white/10 gap-1">
+                <button id="export-stl-btn" onclick="exportBinarySTL()" title="Export Watertight Binary STL for 3D Printing" class="px-2.5 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-gray-100 font-semibold text-xs flex items-center gap-1 transition active:scale-95">
+                    <span>STL</span>
+                </button>
+                <button onclick="exportWavefrontOBJ()" title="Export Wavefront .OBJ Mesh with Vertex Colors" class="px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-gray-200 font-mono font-semibold text-xs transition active:scale-95">
+                    OBJ
+                </button>
+                <button onclick="exportBinaryGLB()" title="Export Binary glTF 2.0 (.GLB) with Colors & Material" class="px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-gray-200 font-mono font-semibold text-xs transition active:scale-95">
+                    GLB
+                </button>
+                <button onclick="exportRenderPNG(true)" title="Save Transparent Background .PNG Snapshot" class="px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-emerald-400 font-mono font-semibold text-xs flex items-center gap-1 transition active:scale-95">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>PNG</span>
+                </button>
+                <button onclick="exportAllFormats()" title="Export All Formats at Once (STL, OBJ, GLB, Transparent PNG)" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 !text-white font-semibold text-xs shadow-md shadow-indigo-500/20 flex items-center gap-1.5 transition active:scale-95">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/>
+                    </svg>
+                    <span>Export All</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- 3D VIEWPORT AREA -->
+        <main class="relative flex-1 h-[48vh] lg:h-full bg-studio-950 overflow-hidden select-none">
+            <!-- Three.js Canvas Container -->
+            <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Viewport Top-Left Toolbar (Camera, View Modes & Vertical Height Clipping) -->
+            <div class="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 z-10 max-w-[95%]">
+                <button id="btn-autorotate" onclick="toggleAutoRotate()" class="glass-panel px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 text-indigo-300 border-indigo-500/40 hover:bg-white/10 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Auto-Rotate</span>
+                </button>
+
+                <button id="btn-wireframe" onclick="toggleWireframe()" class="glass-panel px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 text-gray-300 hover:bg-white/10 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <span>Wireframe</span>
+                </button>
+
+                <button id="btn-cutaway" onclick="toggleCutaway()" class="glass-panel px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 text-gray-300 hover:bg-white/10 transition" title="Slice vase vertically in half (X-axis cutaway)">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z"/>
+                    </svg>
+                    <span>Section X</span>
+                </button>
+
+                <!-- Vertical / Height Clipping Slider Pill -->
+                <div class="glass-panel px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs">
+                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M3 6h18M3 18h18"/>
+                    </svg>
+                    <span class="text-gray-300 font-medium whitespace-nowrap">Height Clip:</span>
+                    <input id="viewport-slider-clipHeight" type="range" min="1" max="100" step="1" value="100" oninput="updateClipHeight(this.value)" class="!w-20 sm:!w-28 accent-amber-400">
+                    <span id="viewport-val-clipHeight" class="font-mono text-[11px] text-amber-400 font-semibold w-10 text-right">100%</span>
+                </div>
+
+                <button onclick="resetCamera()" class="glass-panel px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 text-gray-300 hover:bg-white/10 transition" title="Reset Camera Angle">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="hidden sm:inline">Reset View</span>
+                </button>
+            </div>
+
+            <!-- 2D Wall Profile Cross-Section Visualizer (Bottom-Left) -->
+            <div class="hidden sm:flex flex-col glass-panel rounded-2xl p-3 absolute bottom-4 left-4 z-10 w-48 shadow-2xl">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Wall Profile Curve</span>
+                    <span id="profile-thickness-badge" class="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">4.0mm</span>
+                </div>
+                <canvas id="profile-canvas" width="168" height="180" class="w-full h-[150px] rounded-lg bg-studio-950/80 border border-white/5"></canvas>
+                <div class="flex justify-between text-[10px] font-mono text-gray-400 mt-1.5">
+                    <span>Outer Curve</span>
+                    <span class="text-indigo-400">Inner Cavity</span>
+                </div>
+            </div>
+
+            <!-- Live Physical & Print Metrics (Bottom-Right) -->
+            <div class="glass-panel rounded-2xl px-3.5 py-2.5 absolute bottom-3 right-3 z-10 flex items-center gap-4 text-xs shadow-xl">
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400">Bounding Box</div>
+                    <div id="stat-dimensions" class="font-mono font-semibold text-white text-xs sm:text-sm">116 × 116 × 180 mm</div>
+                </div>
+                <div class="h-7 w-px bg-white/10"></div>
+                <div class="hidden sm:block">
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400">Capacity</div>
+                    <div id="stat-volume" class="font-mono font-semibold text-emerald-400 text-xs sm:text-sm">~840 mL</div>
+                </div>
+                <div class="hidden sm:block h-7 w-px bg-white/10"></div>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-gray-400">Mesh Triangles</div>
+                    <div id="stat-triangles" class="font-mono font-semibold text-indigo-400 text-xs sm:text-sm">24,576</div>
+                </div>
+            </div>
+
+            <!-- Toast Notification for STL Export -->
+            <div id="toast-notification" class="pointer-events-none opacity-0 translate-y-4 transition-all duration-300 absolute top-14 left-1/2 -translate-x-1/2 z-30 glass-panel px-4 py-3 rounded-2xl border border-emerald-500/40 shadow-2xl flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-xs font-semibold text-white" id="toast-title">STL Exported Successfully!</div>
+                    <div class="text-[11px] text-gray-300 font-mono" id="toast-desc">Watertight manifold mesh ready for 3D slicing.</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT CONTROL SIDEBAR -->
+        <aside class="w-full lg:w-[400px] xl:w-[430px] h-[52vh] lg:h-full bg-studio-900 border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col z-20">
+
+            <!-- Category Tabs -->
+            <div class="grid grid-cols-3 gap-1 p-2 bg-studio-950/60 border-b border-white/10 shrink-0">
+                <button onclick="switchTab('dimensions')" id="tab-btn-dimensions" class="tab-btn py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                    <span>Dimensions</span>
+                </button>
+                <button onclick="switchTab('surface')" id="tab-btn-surface" class="tab-btn py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 text-gray-400 hover:text-white hover:bg-white/5 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                    </svg>
+                    <span>Ribs & Twist</span>
+                </button>
+                <button onclick="switchTab('colors')" id="tab-btn-colors" class="tab-btn py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 text-gray-400 hover:text-white hover:bg-white/5 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                    </svg>
+                    <span>Colors & Finish</span>
+                </button>
+            </div>
+
+            <!-- Scrollable Controls Container -->
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-5">
+
+                <!-- Mobile Presets Bar (visible on smaller screens) -->
+                <div class="xl:hidden bg-studio-850 p-3 rounded-xl border border-white/5">
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Quick Shape Presets</div>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button onclick="applyPreset('amphora')" class="px-2 py-1.5 text-xs font-medium rounded-lg bg-studio-800 hover:bg-white/10 text-gray-200 transition">Amphora</button>
+                        <button onclick="applyPreset('spiral')" class="px-2 py-1.5 text-xs font-medium rounded-lg bg-studio-800 hover:bg-white/10 text-gray-200 transition">Spiral Fluted</button>
+                        <button onclick="applyPreset('lowpoly')" class="px-2 py-1.5 text-xs font-medium rounded-lg bg-studio-800 hover:bg-white/10 text-gray-200 transition">Origami Hex</button>
+                        <button onclick="applyPreset('ripple')" class="px-2 py-1.5 text-xs font-medium rounded-lg bg-studio-800 hover:bg-white/10 text-gray-200 transition">Wave Ripple</button>
+                        <button onclick="applyPreset('bud')" class="px-2 py-1.5 text-xs font-medium rounded-lg bg-studio-800 hover:bg-white/10 text-gray-200 transition">Bud Vase</button>
+                        <button onclick="applyPreset('planter')" class="px-2 py-1.5 text-xs font-medium rounded-lg bg-studio-800 hover:bg-white/10 text-gray-200 transition">Zen Planter</button>
+                    </div>
+                </div>
+
+                <!-- TAB 1: DIMENSIONS & SILHOUETTE -->
+                <div id="tab-dimensions" class="space-y-4">
+                    <div class="bg-studio-850/90 p-3.5 rounded-2xl border border-white/5 space-y-3.5">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Overall Scale & Wall</span>
+                            <span class="text-[11px] text-gray-400">Units: mm</span>
+                        </div>
+
+                        <!-- Total Height -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-height" class="text-gray-300 font-medium">Total Height</label>
+                                <span id="val-height" class="font-mono text-indigo-400 font-semibold">180 mm</span>
+                            </div>
+                            <input id="slider-height" type="range" min="60" max="300" step="1" value="180" oninput="updateParam('height', this.value)">
+                        </div>
+
+                        <!-- Wall Thickness -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-wallThickness" class="text-gray-300 font-medium">Wall & Base Thickness</label>
+                                <span id="val-wallThickness" class="font-mono text-indigo-400 font-semibold">4.0 mm</span>
+                            </div>
+                            <input id="slider-wallThickness" type="range" min="2" max="12" step="0.5" value="4.0" oninput="updateParam('wallThickness', this.value)">
+                        </div>
+
+                        <!-- Vertical / Height Clipping Slider -->
+                        <div class="pt-2 border-t border-white/5">
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-clipHeight" class="text-amber-300 font-medium flex items-center gap-1.5">
+                                    <span>Vertical / Height Clipping</span>
+                                </label>
+                                <span id="val-clipHeight" class="font-mono text-amber-400 font-semibold">100% (180 mm)</span>
+                            </div>
+                            <input id="slider-clipHeight" type="range" min="1" max="100" step="1" value="100" oninput="updateClipHeight(this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Profile Radii -->
+                    <div class="bg-studio-850/90 p-3.5 rounded-2xl border border-white/5 space-y-3.5">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Silhouette Radii</span>
+                            <span class="text-[11px] text-gray-400">Bottom to Top</span>
+                        </div>
+
+                        <!-- Top / Lip Radius -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-topRadius" class="text-gray-300 font-medium">Top Lip Radius</label>
+                                <span id="val-topRadius" class="font-mono text-indigo-400 font-semibold">38 mm</span>
+                            </div>
+                            <input id="slider-topRadius" type="range" min="12" max="95" step="1" value="38" oninput="updateParam('topRadius', this.value)">
+                        </div>
+
+                        <!-- Neck Radius -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-neckRadius" class="text-gray-300 font-medium">Upper Neck Radius</label>
+                                <span id="val-neckRadius" class="font-mono text-indigo-400 font-semibold">28 mm</span>
+                            </div>
+                            <input id="slider-neckRadius" type="range" min="10" max="95" step="1" value="28" oninput="updateParam('neckRadius', this.value)">
+                        </div>
+
+                        <!-- Neck Vertical Position -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-neckHeight" class="text-gray-400 font-normal">↳ Neck Elevation</label>
+                                <span id="val-neckHeight" class="font-mono text-gray-300">75%</span>
+                            </div>
+                            <input id="slider-neckHeight" type="range" min="52" max="90" step="1" value="75" oninput="updateParam('neckHeight', this.value)">
+                        </div>
+
+                        <!-- Belly Radius -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-bellyRadius" class="text-gray-300 font-medium">Lower Belly Radius</label>
+                                <span id="val-bellyRadius" class="font-mono text-indigo-400 font-semibold">58 mm</span>
+                            </div>
+                            <input id="slider-bellyRadius" type="range" min="15" max="105" step="1" value="58" oninput="updateParam('bellyRadius', this.value)">
+                        </div>
+
+                        <!-- Belly Vertical Position -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-bellyHeight" class="text-gray-400 font-normal">↳ Belly Elevation</label>
+                                <span id="val-bellyHeight" class="font-mono text-gray-300">35%</span>
+                            </div>
+                            <input id="slider-bellyHeight" type="range" min="12" max="48" step="1" value="35" oninput="updateParam('bellyHeight', this.value)">
+                        </div>
+
+                        <!-- Base Radius -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-baseRadius" class="text-gray-300 font-medium">Bottom Foot Radius</label>
+                                <span id="val-baseRadius" class="font-mono text-indigo-400 font-semibold">36 mm</span>
+                            </div>
+                            <input id="slider-baseRadius" type="range" min="15" max="90" step="1" value="36" oninput="updateParam('baseRadius', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: RIBS, TWIST & MESH GEOMETRY -->
+                <div id="tab-surface" class="space-y-4 hidden">
+                    <div class="bg-studio-850/90 p-3.5 rounded-2xl border border-white/5 space-y-3.5">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Sculptural Fluting & Twist</span>
+                        </div>
+
+                        <!-- Rib Count -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-ribCount" class="text-gray-300 font-medium">Vertical Ribs / Flutes</label>
+                                <span id="val-ribCount" class="font-mono text-indigo-400 font-semibold">18</span>
+                            </div>
+                            <input id="slider-ribCount" type="range" min="0" max="40" step="1" value="18" oninput="updateParam('ribCount', this.value)">
+                        </div>
+
+                        <!-- Rib Depth -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-ribDepth" class="text-gray-300 font-medium">Rib Relief Depth</label>
+                                <span id="val-ribDepth" class="font-mono text-indigo-400 font-semibold">3.5 mm</span>
+                            </div>
+                            <input id="slider-ribDepth" type="range" min="0" max="14" step="0.5" value="3.5" oninput="updateParam('ribDepth', this.value)">
+                        </div>
+
+                        <!-- Spiral Twist Angle -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-twistAngle" class="text-gray-300 font-medium">Spiral Twist Angle</label>
+                                <span id="val-twistAngle" class="font-mono text-indigo-400 font-semibold">90°</span>
+                            </div>
+                            <input id="slider-twistAngle" type="range" min="-360" max="360" step="5" value="90" oninput="updateParam('twistAngle', this.value)">
+                        </div>
+
+                        <!-- Harmonic Wave Frequency -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-waveFreq" class="text-gray-300 font-medium">Vertical Ripple Waves</label>
+                                <span id="val-waveFreq" class="font-mono text-indigo-400 font-semibold">0.0</span>
+                            </div>
+                            <input id="slider-waveFreq" type="range" min="0" max="6" step="0.5" value="0" oninput="updateParam('waveFreq', this.value)">
+                        </div>
+
+                        <!-- Wave Amplitude -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-waveAmp" class="text-gray-300 font-medium">Ripple Wave Depth</label>
+                                <span id="val-waveAmp" class="font-mono text-indigo-400 font-semibold">0.0 mm</span>
+                            </div>
+                            <input id="slider-waveAmp" type="range" min="0" max="12" step="0.5" value="0" oninput="updateParam('waveAmp', this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Mesh Resolution / Polygon Sides -->
+                    <div class="bg-studio-850/90 p-3.5 rounded-2xl border border-white/5 space-y-3.5">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Mesh Resolution & Facets</span>
+                        </div>
+
+                        <!-- Radial Segments -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-radialSegments" class="text-gray-300 font-medium">Radial Sides (Low-Poly to Smooth)</label>
+                                <span id="val-radialSegments" class="font-mono text-indigo-400 font-semibold">128</span>
+                            </div>
+                            <input id="slider-radialSegments" type="range" min="3" max="160" step="1" value="128" oninput="updateParam('radialSegments', this.value)">
+                            <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+                                <button onclick="setQuickSides(6)" class="hover:text-indigo-400">6 (Hex)</button>
+                                <button onclick="setQuickSides(8)" class="hover:text-indigo-400">8 (Oct)</button>
+                                <button onclick="setQuickSides(12)" class="hover:text-indigo-400">12 (Dodec)</button>
+                                <button onclick="setQuickSides(64)" class="hover:text-indigo-400">64 (Standard)</button>
+                                <button onclick="setQuickSides(144)" class="hover:text-indigo-400">144 (Ultra)</button>
+                            </div>
+                        </div>
+
+                        <!-- Height Segments -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1.5">
+                                <label for="slider-heightSegments" class="text-gray-300 font-medium">Vertical Slice Layers</label>
+                                <span id="val-heightSegments" class="font-mono text-indigo-400 font-semibold">96</span>
+                            </div>
+                            <input id="slider-heightSegments" type="range" min="12" max="140" step="2" value="96" oninput="updateParam('heightSegments', this.value)">
+                        </div>
+
+                        <!-- Flat Shading Toggle -->
+                        <div class="flex items-center justify-between pt-1">
+                            <div>
+                                <div class="text-xs font-medium text-gray-200">Faceted / Crisp Shading</div>
+                                <div class="text-[11px] text-gray-400">Ideal for low-poly geometric aesthetics</div>
+                            </div>
+                            <button id="btn-flat-shading" onclick="toggleFlatShading()" class="w-11 h-6 rounded-full bg-studio-700 p-0.5 transition flex items-center">
+                                <div id="dot-flat-shading" class="w-5 h-5 rounded-full bg-gray-300 transition transform"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: COLORS & MATERIAL FINISH -->
+                <div id="tab-colors" class="space-y-4 hidden">
+                    <!-- Curated Color Swatches -->
+                    <div class="bg-studio-850/90 p-3.5 rounded-2xl border border-white/5 space-y-3">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Designer Color Palette</span>
+                            <span id="active-color-name" class="text-[11px] font-mono text-gray-400">Aegean Teal</span>
+                        </div>
+
+                        <!-- Swatches Grid -->
+                        <div id="swatch-grid" class="grid grid-cols-6 gap-2.5 pt-1">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <!-- Custom Color Pickers -->
+                        <div class="pt-3 border-t border-white/5 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <input type="color" id="picker-primary" value="#2dd4bf" oninput="updateCustomColor('primary', this.value)">
+                                    <div>
+                                        <div class="text-xs font-medium text-gray-200">Primary Base Color</div>
+                                        <div id="hex-primary" class="text-[11px] font-mono text-gray-400">#2DD4BF</div>
+                                    </div>
+                                </div>
+
+                                <!-- Enable Two-Tone Gradient -->
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-300">2-Tone Gradient</span>
+                                    <button id="btn-gradient" onclick="toggleGradient()" class="w-11 h-6 rounded-full bg-indigo-600 p-0.5 transition flex items-center">
+                                        <div id="dot-gradient" class="w-5 h-5 rounded-full bg-white transition transform translate-x-5"></div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Secondary Gradient Color -->
+                            <div id="secondary-color-row" class="flex items-center justify-between bg-studio-900/80 p-2.5 rounded-xl border border-white/5">
+                                <div class="flex items-center gap-2.5">
+                                    <input type="color" id="picker-secondary" value="#6366f1" oninput="updateCustomColor('secondary', this.value)">
+                                    <div>
+                                        <div class="text-xs font-medium text-gray-200">Top Rim Accent Color</div>
+                                        <div id="hex-secondary" class="text-[11px] font-mono text-gray-400">#6366F1</div>
+                                    </div>
+                                </div>
+                                <button onclick="swapGradientColors()" class="px-2.5 py-1 rounded-lg bg-studio-800 hover:bg-studio-700 text-[11px] text-gray-300 border border-white/10 transition">
+                                    Swap ⇅
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Surface Material Finishes -->
+                    <div class="bg-studio-850/90 p-3.5 rounded-2xl border border-white/5 space-y-3">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-2">
+                            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">Surface Finish & Glaze</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setFinish('ceramic')" id="finish-ceramic" class="finish-btn p-2.5 rounded-xl border border-indigo-500/50 bg-indigo-600/20 text-left transition">
+                                <div class="text-xs font-semibold text-white">Glazed Ceramic</div>
+                                <div class="text-[10px] text-gray-400">Glossy porcelain shine</div>
+                            </button>
+                            <button onclick="setFinish('clay')" id="finish-clay" class="finish-btn p-2.5 rounded-xl border border-white/5 bg-studio-900 hover:bg-white/5 text-left transition">
+                                <div class="text-xs font-semibold text-gray-200">Matte Stoneware</div>
+                                <div class="text-[10px] text-gray-400">Raw Bisque / PLA look</div>
+                            </button>
+                            <button onclick="setFinish('metallic')" id="finish-metallic" class="finish-btn p-2.5 rounded-xl border border-white/5 bg-studio-900 hover:bg-white/5 text-left transition">
+                                <div class="text-xs font-semibold text-gray-200">Silk Metallic</div>
+                                <div class="text-[10px] text-gray-400">Lustrous anodized sheen</div>
+                            </button>
+                            <button onclick="setFinish('glass')" id="finish-glass" class="finish-btn p-2.5 rounded-xl border border-white/5 bg-studio-900 hover:bg-white/5 text-left transition">
+                                <div class="text-xs font-semibold text-gray-200">Frosted Glass</div>
+                                <div class="text-[10px] text-gray-400">Translucent acrylic tint</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Sidebar Footer: Multi-Format Export Bar -->
+            <div class="p-3 bg-studio-950/90 border-t border-white/10 shrink-0 space-y-2">
+                <button onclick="exportAllFormats()" class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 !text-white font-semibold text-xs shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 transition active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/>
+                    </svg>
+                    <span>Export All in Once (STL, OBJ, GLB, PNG-Transparent)</span>
+                </button>
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button onclick="exportBinarySTL()" class="py-1.5 px-2 rounded-lg bg-studio-800 hover:bg-studio-700 border border-white/10 text-gray-200 font-mono font-semibold text-xs text-center transition active:scale-95">
+                        .STL
+                    </button>
+                    <button onclick="exportWavefrontOBJ()" class="py-1.5 px-2 rounded-lg bg-studio-800 hover:bg-studio-700 border border-white/10 text-gray-200 font-mono font-semibold text-xs text-center transition active:scale-95">
+                        .OBJ
+                    </button>
+                    <button onclick="exportBinaryGLB()" class="py-1.5 px-2 rounded-lg bg-studio-800 hover:bg-studio-700 border border-white/10 text-gray-200 font-mono font-semibold text-xs text-center transition active:scale-95">
+                        .GLB
+                    </button>
+                    <button onclick="exportRenderPNG(true)" title="Transparent PNG" class="py-1.5 px-2 rounded-lg bg-studio-800 hover:bg-studio-700 border border-white/10 text-emerald-400 font-mono font-semibold text-xs text-center transition active:scale-95">
+                        .PNG
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- APPLICATION LOGIC & 3D ENGINE -->
+    <script>
+        /***********************************************************************
+         * 1. DESIGN PARAMETERS & CURATED COLOR SWATCHES
+         ***********************************************************************/
+        const SWATCHES = [
+            { name: 'Aegean Teal', primary: '#2dd4bf', secondary: '#4f46e5' },
+            { name: 'Terracotta Clay', primary: '#e07a5f', secondary: '#f2cc8f' },
+            { name: 'Cobalt Porcelain', primary: '#2563eb', secondary: '#38bdf8' },
+            { name: 'Sage Celadon', primary: '#84a98c', secondary: '#cad2c5' },
+            { name: 'Blush Quartz', primary: '#f472b6', secondary: '#fb7185' },
+            { name: 'Amber Ochre', primary: '#f59e0b', secondary: '#ef4444' },
+            { name: 'Alabaster Pearl', primary: '#f8fafc', secondary: '#cbd5e1' },
+            { name: 'Obsidian Matte', primary: '#334155', secondary: '#0f172a' },
+            { name: 'Lavender Mist', primary: '#a855f7', secondary: '#ec4899' },
+            { name: 'Emerald Glaze', primary: '#10b981', secondary: '#047857' },
+            { name: 'Sunset Coral', primary: '#fb7185', secondary: '#facc15' },
+            { name: 'Royal Gold', primary: '#eab308', secondary: '#b45309' }
+        ];
+
+        const PRESETS = {
+            amphora: {
+                height: 200, wallThickness: 4.5,
+                baseRadius: 34, bellyRadius: 68, bellyHeight: 38,
+                neckRadius: 24, neckHeight: 78, topRadius: 42,
+                ribCount: 0, ribDepth: 0, twistAngle: 0,
+                waveFreq: 0, waveAmp: 0,
+                radialSegments: 128, heightSegments: 96, flatShading: false,
+                primaryColor: '#e07a5f', secondaryColor: '#f2cc8f', useGradient: true, finish: 'clay'
+            },
+            spiral: {
+                height: 180, wallThickness: 4.0,
+                baseRadius: 36, bellyRadius: 58, bellyHeight: 35,
+                neckRadius: 28, neckHeight: 75, topRadius: 38,
+                ribCount: 18, ribDepth: 3.5, twistAngle: 90,
+                waveFreq: 0, waveAmp: 0,
+                radialSegments: 128, heightSegments: 96, flatShading: false,
+                primaryColor: '#2dd4bf', secondaryColor: '#6366f1', useGradient: true, finish: 'ceramic'
+            },
+            lowpoly: {
+                height: 175, wallThickness: 4.5,
+                baseRadius: 38, bellyRadius: 64, bellyHeight: 34,
+                neckRadius: 30, neckHeight: 74, topRadius: 40,
+                ribCount: 6, ribDepth: 4.0, twistAngle: 60,
+                waveFreq: 0, waveAmp: 0,
+                radialSegments: 6, heightSegments: 24, flatShading: true,
+                primaryColor: '#f472b6', secondaryColor: '#6366f1', useGradient: true, finish: 'metallic'
+            },
+            ripple: {
+                height: 190, wallThickness: 4.0,
+                baseRadius: 44, bellyRadius: 52, bellyHeight: 40,
+                neckRadius: 42, neckHeight: 72, topRadius: 46,
+                ribCount: 24, ribDepth: 2.5, twistAngle: 45,
+                waveFreq: 3.5, waveAmp: 5.5,
+                radialSegments: 128, heightSegments: 112, flatShading: false,
+                primaryColor: '#38bdf8', secondaryColor: '#1d4ed8', useGradient: true, finish: 'glass'
+            },
+            bud: {
+                height: 165, wallThickness: 3.5,
+                baseRadius: 32, bellyRadius: 62, bellyHeight: 26,
+                neckRadius: 15, neckHeight: 70, topRadius: 22,
+                ribCount: 12, ribDepth: 2.0, twistAngle: -45,
+                waveFreq: 0, waveAmp: 0,
+                radialSegments: 112, heightSegments: 88, flatShading: false,
+                primaryColor: '#84a98c', secondaryColor: '#cad2c5', useGradient: true, finish: 'ceramic'
+            },
+            planter: {
+                height: 110, wallThickness: 6.0,
+                baseRadius: 56, bellyRadius: 78, bellyHeight: 45,
+                neckRadius: 72, neckHeight: 75, topRadius: 68,
+                ribCount: 30, ribDepth: 2.0, twistAngle: 15,
+                waveFreq: 0, waveAmp: 0,
+                radialSegments: 128, heightSegments: 72, flatShading: false,
+                primaryColor: '#f8fafc', secondaryColor: '#94a3b8', useGradient: true, finish: 'clay'
+            }
+        };
+
+        // Current State
+        const state = {
+            height: 180,
+            wallThickness: 4.0,
+            baseRadius: 36,
+            bellyRadius: 58,
+            bellyHeight: 35, // % of height
+            neckRadius: 28,
+            neckHeight: 75,  // % of height
+            topRadius: 38,
+            ribCount: 18,
+            ribDepth: 3.5,
+            twistAngle: 90,
+            waveFreq: 0,
+            waveAmp: 0,
+            radialSegments: 128,
+            heightSegments: 96,
+            flatShading: false,
+            primaryColor: '#2dd4bf',
+            secondaryColor: '#6366f1',
+            useGradient: true,
+            finish: 'ceramic',
+            autoRotate: true,
+            wireframe: false,
+            cutaway: false,
+            clipHeight: 100, // % of total height (1-100)
+            theme: 'dark'
+        };
+
+        /***********************************************************************
+         * 2. THREE.JS SCENE, CAMERA, STUDIO LIGHTING & ORBIT CONTROLS
+         ***********************************************************************/
+        let scene, camera, renderer, vaseMesh, wireframeMesh, gridHelper, floorShadowMesh;
+        let clippingPlane, heightClippingPlane;
+
+        // Custom Orbit Camera State
+        const camState = {
+            theta: 0.6,
+            phi: 1.15,
+            radius: 340,
+            targetY: 85,
+            isDragging: false,
+            isPanning: false,
+            prevX: 0,
+            prevY: 0
+        };
+
+        function initThreeScene() {
+            const container = document.getElementById('canvas-container');
+            const w = container.clientWidth || 800;
+            const h = container.clientHeight || 600;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0b0e);
+
+            camera = new THREE.PerspectiveCamera(40, w / h, 1, 2500);
+            updateCameraTransform();
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true,
+                powerPreference: 'high-performance'
+            });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.localClippingEnabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Section Cutaway Plane (slices along X=0) & Vertical Height Clipping Plane (slices along Y)
+            clippingPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+            heightClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), state.height + 5);
+
+            // Studio Lighting Setup
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.48);
+            scene.add(ambientLight);
+
+            const hemiLight = new THREE.HemisphereLight(0xe0e7ff, 0x1e1b4b, 0.45);
+            hemiLight.position.set(0, 350, 0);
+            scene.add(hemiLight);
+
+            const keyLight = new THREE.DirectionalLight(0xfffbeb, 0.95);
+            keyLight.position.set(180, 320, 220);
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            keyLight.shadow.camera.near = 50;
+            keyLight.shadow.camera.far = 900;
+            const d = 180;
+            keyLight.shadow.camera.left = -d;
+            keyLight.shadow.camera.right = d;
+            keyLight.shadow.camera.top = d;
+            keyLight.shadow.camera.bottom = -d;
+            keyLight.shadow.bias = -0.0005;
+            scene.add(keyLight);
+
+            const fillLight = new THREE.DirectionalLight(0x818cf8, 0.45);
+            fillLight.position.set(-220, 160, -140);
+            scene.add(fillLight);
+
+            const rimLight = new THREE.DirectionalLight(0xf472b6, 0.35);
+            rimLight.position.set(0, 240, -240);
+            scene.add(rimLight);
+
+            // Subtle Studio Build-Plate Grid
+            gridHelper = new THREE.GridHelper(320, 16, 0x374151, 0x1f2937);
+            gridHelper.position.y = -0.2;
+            scene.add(gridHelper);
+
+            // Soft Shadow Catcher Floor
+            const floorGeo = new THREE.PlaneGeometry(500, 500);
+            const floorMat = new THREE.ShadowMaterial({ opacity: 0.35 });
+            floorShadowMesh = new THREE.Mesh(floorGeo, floorMat);
+            floorShadowMesh.rotation.x = -Math.PI / 2;
+            floorShadowMesh.position.y = -0.1;
+            floorShadowMesh.receiveShadow = true;
+            scene.add(floorShadowMesh);
+
+            // Setup Mouse & Touch Camera Controls
+            setupViewportInteractions(renderer.domElement);
+
+            // Build Initial Vase
+            rebuildVaseMesh();
+
+            // Window Resize Listener
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function updateCameraTransform() {
+            camState.phi = Math.max(0.12, Math.min(Math.PI - 0.12, camState.phi));
+            camState.radius = Math.max(120, Math.min(850, camState.radius));
+
+            camera.position.x = camState.radius * Math.sin(camState.phi) * Math.sin(camState.theta);
+            camera.position.y = camState.targetY + camState.radius * Math.cos(camState.phi);
+            camera.position.z = camState.radius * Math.sin(camState.phi) * Math.cos(camState.theta);
+            camera.lookAt(0, camState.targetY, 0);
+        }
+
+        function setupViewportInteractions(domElem) {
+            domElem.addEventListener('mousedown', (e) => {
+                camState.isDragging = true;
+                camState.isPanning = (e.button === 2 || e.shiftKey);
+                camState.prevX = e.clientX;
+                camState.prevY = e.clientY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!camState.isDragging) return;
+                const dx = e.clientX - camState.prevX;
+                const dy = e.clientY - camState.prevY;
+                camState.prevX = e.clientX;
+                camState.prevY = e.clientY;
+
+                if (camState.isPanning) {
+                    camState.targetY = Math.max(10, Math.min(250, camState.targetY + dy * 0.4));
+                } else {
+                    camState.theta -= dx * 0.008;
+                    camState.phi -= dy * 0.008;
+                }
+                updateCameraTransform();
+            });
+
+            window.addEventListener('mouseup', () => {
+                camState.isDragging = false;
+            });
+
+            domElem.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            domElem.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                camState.radius += e.deltaY * 0.25;
+                updateCameraTransform();
+            }, { passive: false });
+
+            // Touch Support (1-finger orbit, 2-finger pinch zoom)
+            let lastTouchDist = 0;
+            domElem.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    camState.isDragging = true;
+                    camState.prevX = e.touches[0].clientX;
+                    camState.prevY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    camState.isDragging = false;
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    lastTouchDist = Math.hypot(dx, dy);
+                }
+            }, { passive: true });
+
+            domElem.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && camState.isDragging) {
+                    const dx = e.touches[0].clientX - camState.prevX;
+                    const dy = e.touches[0].clientY - camState.prevY;
+                    camState.prevX = e.touches[0].clientX;
+                    camState.prevY = e.touches[0].clientY;
+                    camState.theta -= dx * 0.008;
+                    camState.phi -= dy * 0.008;
+                    updateCameraTransform();
+                } else if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const dist = Math.hypot(dx, dy);
+                    if (lastTouchDist > 0) {
+                        camState.radius -= (dist - lastTouchDist) * 0.8;
+                        updateCameraTransform();
+                    }
+                    lastTouchDist = dist;
+                }
+            }, { passive: true });
+
+            domElem.addEventListener('touchend', () => {
+                camState.isDragging = false;
+            });
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            if (!container || !renderer) return;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+
+        /***********************************************************************
+         * 3. PARAMETRIC SPLINE & WATERTIGHT MANIFOLD VASE GENERATOR
+         ***********************************************************************/
+        /**
+         * Evaluates the smooth Catmull-Rom / Cosine-interpolated base radius at normalized height t in [0, 1]
+         */
+        function evaluateBaseSplineRadius(t) {
+            const tBelly = Math.max(0.10, Math.min(0.50, state.bellyHeight / 100));
+            const tNeck = Math.max(tBelly + 0.10, Math.min(0.92, state.neckHeight / 100));
+
+            const knots = [
+                { t: 0.0, r: state.baseRadius },
+                { t: tBelly, r: state.bellyRadius },
+                { t: tNeck, r: state.neckRadius },
+                { t: 1.0, r: state.topRadius }
+            ];
+
+            // Clamp t
+            const tc = Math.max(0, Math.min(1, t));
+
+            // Monotonic / Smooth Cubic Hermite Spline through the 4 control knots
+            let seg = 0;
+            if (tc >= knots[2].t) seg = 2;
+            else if (tc >= knots[1].t) seg = 1;
+            else seg = 0;
+
+            const p0 = knots[Math.max(0, seg - 1)];
+            const p1 = knots[seg];
+            const p2 = knots[seg + 1];
+            const p3 = knots[Math.min(3, seg + 2)];
+
+            const span = Math.max(0.0001, p2.t - p1.t);
+            const u = (tc - p1.t) / span;
+            const u2 = u * u;
+            const u3 = u2 * u;
+
+            // Catmull-Rom tangents scaled for smooth ceramic curves
+            const tension = 0.5;
+            const m1 = tension * (p2.r - p0.r);
+            const m2 = tension * (p3.r - p1.r);
+
+            const h00 = 2 * u3 - 3 * u2 + 1;
+            const h10 = u3 - 2 * u2 + u;
+            const h01 = -2 * u3 + 3 * u2;
+            const h11 = u3 - u2;
+
+            let r = h00 * p1.r + h10 * m1 + h01 * p2.r + h11 * m2;
+
+            // Subtle vertical harmonic wave modulation
+            if (state.waveFreq > 0 && state.waveAmp > 0) {
+                const envelope = Math.sin(tc * Math.PI); // Taper at bottom foot and top rim
+                r += state.waveAmp * envelope * Math.sin(tc * state.waveFreq * Math.PI * 2);
+            }
+
+            return Math.max(6, r);
+        }
+
+        /**
+         * Evaluates the outer sculptural radius at height ratio t [0,1] and angle theta [0, 2*PI]
+         */
+        function evaluateOuterSurfaceRadius(t, theta) {
+            let r = evaluateBaseSplineRadius(t);
+
+            if (state.ribCount > 0 && state.ribDepth > 0) {
+                const twistRad = (state.twistAngle * Math.PI) / 180;
+                // Smooth fade near the bottom 4% so the vase sits stable on a flat print bed
+                const bottomFade = Math.min(1.0, t / 0.05);
+                const phase = state.ribCount * (theta + t * twistRad);
+                const ribWave = Math.cos(phase);
+                r += state.ribDepth * bottomFade * ribWave;
+            }
+
+            return Math.max(6, r);
+        }
+
+        /**
+         * Builds a 100% watertight, closed-manifold 3D BufferGeometry with:
+         *  - Center bottom foot vertex
+         *  - Outer wall rings (j = 0..H)
+         *  - Rounded 3-ring top lip bevel
+         *  - Inner cavity wall rings (j = H..1)
+         *  - Center inner floor vertex
+         *  - Vertex colors supporting solid or 2-tone vertical gradients
+         */
+        function createWatertightVaseGeometry() {
+            const N = Math.max(3, Math.round(state.radialSegments));
+            const H = Math.max(10, Math.round(state.heightSegments));
+            const totalH = state.height;
+            const wall = Math.min(state.wallThickness, state.baseRadius * 0.65, state.neckRadius * 0.65, state.topRadius * 0.65);
+            const floorThickness = Math.max(wall * 1.4, 3.0);
+
+            const profileLoops = [];
+
+            // 1. Outer Wall Rings (bottom t=0 to top t=1)
+            for (let j = 0; j <= H; j++) {
+                const t = j / H;
+                const y = t * totalH;
+                profileLoops.push({ t, y, isInner: false, lipFactor: 0 });
+            }
+
+            // 2. Top Rim Bevel Rings (smoothly bridges outer wall to inner cavity)
+            const lipArcHeight = Math.min(1.5, wall * 0.2);
+            profileLoops.push({ t: 1.0, y: totalH + lipArcHeight, isInner: false, lipFactor: 0.35 });
+            profileLoops.push({ t: 1.0, y: totalH + lipArcHeight, isInner: true, lipFactor: 0.65 });
+
+            // 3. Inner Cavity Wall Rings (top t=1 down to inner floor)
+            for (let j = H; j >= 1; j--) {
+                const u = j / H; // 1 at top, 1/H near floor
+                const y = floorThickness + u * (totalH - floorThickness);
+                const t = y / totalH;
+                profileLoops.push({ t, y, isInner: true, lipFactor: 1 });
+            }
+
+            const numLoops = profileLoops.length;
+            const positions = [];
+            const colors = [];
+
+            const colorPrimary = new THREE.Color(state.primaryColor);
+            const colorSecondary = new THREE.Color(state.secondaryColor);
+            const tempColor = new THREE.Color();
+
+            function getColorForHeight(yVal, isInnerWall) {
+                const normY = Math.max(0, Math.min(1, yVal / totalH));
+                if (state.useGradient) {
+                    tempColor.copy(colorPrimary).lerp(colorSecondary, normY);
+                } else {
+                    tempColor.copy(colorPrimary);
+                }
+                // Slightly darken inner cavity for realistic depth perception
+                if (isInnerWall) {
+                    tempColor.multiplyScalar(0.86);
+                }
+                return tempColor;
+            }
+
+            // Vertex 0: Bottom Center Point (0, 0, 0)
+            positions.push(0, 0, 0);
+            const cBot = getColorForHeight(0, false);
+            colors.push(cBot.r, cBot.g, cBot.b);
+
+            // Generate all Ring Vertices
+            for (let k = 0; k < numLoops; k++) {
+                const loop = profileLoops[k];
+                const cRing = getColorForHeight(loop.y, loop.isInner);
+
+                for (let i = 0; i < N; i++) {
+                    const theta = (i / N) * Math.PI * 2;
+                    const rOuter = evaluateOuterSurfaceRadius(loop.t, theta);
+                    // Inner cavity follows the spline with subtle 35% rib relief so wall thickness stays uniform
+                    const rBase = evaluateBaseSplineRadius(loop.t);
+                    const ribDelta = rOuter - rBase;
+                    const rInner = Math.max(2.5, rBase - wall + ribDelta * 0.35);
+
+                    let r = rOuter;
+                    if (loop.lipFactor > 0) {
+                        r = rOuter * (1 - loop.lipFactor) + rInner * loop.lipFactor;
+                    }
+
+                    const x = r * Math.cos(theta);
+                    const z = r * Math.sin(theta);
+
+                    positions.push(x, loop.y, z);
+                    colors.push(cRing.r, cRing.g, cRing.b);
+                }
+            }
+
+            // Last Vertex: Inner Floor Center Point (0, floorThickness, 0)
+            const innerCenterIndex = 1 + numLoops * N;
+            positions.push(0, floorThickness, 0);
+            const cFloor = getColorForHeight(floorThickness, true);
+            colors.push(cFloor.r, cFloor.g, cFloor.b);
+
+            // Build Watertight Manifold Triangle Indices (Outward Counter-Clockwise Winding)
+            const indices = [];
+
+            // A. Bottom Base Cap (connects Vertex 0 to Ring 0, normal pointing -Y)
+            for (let i = 0; i < N; i++) {
+                const nextI = (i + 1) % N;
+                indices.push(0, 1 + i, 1 + nextI);
+            }
+
+            // B. Quad Strips connecting consecutive Profile Loops
+            for (let k = 0; k < numLoops - 1; k++) {
+                const ringA = 1 + k * N;
+                const ringB = 1 + (k + 1) * N;
+                for (let i = 0; i < N; i++) {
+                    const nextI = (i + 1) % N;
+                    const a = ringA + i;
+                    const b = ringA + nextI;
+                    const c = ringB + nextI;
+                    const d = ringB + i;
+
+                    indices.push(a, d, c);
+                    indices.push(a, c, b);
+                }
+            }
+
+            // C. Inner Cavity Floor Cap (connects Last Ring to innerCenterIndex, normal pointing +Y)
+            const lastRingStart = 1 + (numLoops - 1) * N;
+            for (let i = 0; i < N; i++) {
+                const nextI = (i + 1) % N;
+                indices.push(innerCenterIndex, lastRingStart + nextI, lastRingStart + i);
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setIndex(indices);
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+
+            return geometry;
+        }
+
+        /**
+         * Returns the active Three.js clipping planes based on X-cutaway and Vertical Height Clipping
+         */
+        function getActiveClippingPlanes() {
+            const planes = [];
+            if (state.cutaway) {
+                planes.push(clippingPlane);
+            }
+            if (state.clipHeight < 100) {
+                const maxLipH = state.height + Math.min(1.5, state.wallThickness * 0.2);
+                heightClippingPlane.constant = (state.clipHeight / 100) * maxLipH;
+                planes.push(heightClippingPlane);
+            }
+            return planes;
+        }
+
+        /**
+         * Creates the Three.js Material based on the selected finish & state
+         */
+        function createVaseMaterial() {
+            const activePlanes = getActiveClippingPlanes();
+            const commonProps = {
+                vertexColors: true,
+                flatShading: state.flatShading,
+                side: THREE.DoubleSide,
+                clippingPlanes: activePlanes,
+                clipShadows: true
+            };
+
+            switch (state.finish) {
+                case 'clay':
+                    return new THREE.MeshStandardMaterial({
+                        ...commonProps,
+                        roughness: 0.82,
+                        metalness: 0.04
+                    });
+                case 'metallic':
+                    return new THREE.MeshStandardMaterial({
+                        ...commonProps,
+                        roughness: 0.25,
+                        metalness: 0.72
+                    });
+                case 'glass':
+                    return new THREE.MeshPhysicalMaterial({
+                        ...commonProps,
+                        roughness: 0.15,
+                        metalness: 0.05,
+                        transparent: true,
+                        opacity: 0.78,
+                        reflectivity: 0.9
+                    });
+                case 'ceramic':
+                default:
+                    return new THREE.MeshPhysicalMaterial({
+                        ...commonProps,
+                        roughness: 0.14,
+                        metalness: 0.08,
+                        clearcoat: 0.85,
+                        clearcoatRoughness: 0.1
+                    });
+            }
+        }
+
+        /**
+         * Rebuilds the 3D Vase Mesh, updates Wireframe, 2D Profile Canvas, and Metrics
+         */
+        function rebuildVaseMesh() {
+            if (!scene) return;
+
+            if (vaseMesh) {
+                vaseMesh.geometry.dispose();
+                vaseMesh.material.dispose();
+                scene.remove(vaseMesh);
+            }
+            if (wireframeMesh) {
+                wireframeMesh.geometry.dispose();
+                wireframeMesh.material.dispose();
+                scene.remove(wireframeMesh);
+            }
+
+            const geometry = createWatertightVaseGeometry();
+            const material = createVaseMaterial();
+
+            vaseMesh = new THREE.Mesh(geometry, material);
+            vaseMesh.castShadow = true;
+            vaseMesh.receiveShadow = true;
+            scene.add(vaseMesh);
+
+            if (state.wireframe) {
+                const wireGeo = new THREE.WireframeGeometry(geometry);
+                const wireMat = new THREE.LineBasicMaterial({
+                    color: state.theme === 'light' ? 0x1e293b : 0xffffff,
+                    transparent: true,
+                    opacity: 0.22,
+                    clippingPlanes: getActiveClippingPlanes()
+                });
+                wireframeMesh = new THREE.LineSegments(wireGeo, wireMat);
+                vaseMesh.add(wireframeMesh);
+            }
+
+            // Update 2D Cross-Section Profile Visualizer & Live Stats
+            draw2DProfilePreview();
+            updateLiveMetrics(geometry);
+        }
+
+        /***********************************************************************
+         * 4. 2D CROSS-SECTION PROFILE CURVE VISUALIZER & LIVE METRICS
+         ***********************************************************************/
+        function draw2DProfilePreview() {
+            const canvas = document.getElementById('profile-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Subtle Grid Lines
+            ctx.strokeStyle = state.theme === 'light' ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let x = 24; x < w; x += 24) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 24; y < h; y += 24) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+
+            // Center Axis Line
+            const cx = w / 2;
+            ctx.strokeStyle = 'rgba(99, 102, 241, 0.25)';
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(cx, 8);
+            ctx.lineTo(cx, h - 8);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const padY = 14;
+            const drawH = h - padY * 2;
+            const scale = Math.min((w * 0.44) / 110, drawH / 300);
+            const vasePixH = state.height * scale;
+            const bottomY = h - padY;
+            const topY = bottomY - vasePixH;
+
+            // Build Path for Cross-Section Wall (Right & Left Walls + Floor)
+            const steps = 60;
+            ctx.fillStyle = state.primaryColor + '33';
+            ctx.strokeStyle = state.primaryColor;
+            ctx.lineWidth = 1.8;
+
+            ctx.beginPath();
+            // Outer Right Wall (bottom to top)
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const r = evaluateBaseSplineRadius(t) * scale;
+                const x = cx + r;
+                const y = bottomY - t * vasePixH;
+                if (i === 0) ctx.moveTo(cx, bottomY);
+                ctx.lineTo(x, y);
+            }
+
+            // Inner Right Wall (top to inner floor)
+            const floorRatio = Math.min(0.25, Math.max(state.wallThickness * 1.4, 3.0) / state.height);
+            for (let i = steps; i >= 0; i--) {
+                const u = i / steps;
+                const t = floorRatio + u * (1 - floorRatio);
+                const rIn = Math.max(2, evaluateBaseSplineRadius(t) - state.wallThickness) * scale;
+                const x = cx + rIn;
+                const y = bottomY - t * vasePixH;
+                ctx.lineTo(x, y);
+            }
+
+            // Across Inner Floor to Left Inner Wall
+            const floorY = bottomY - floorRatio * vasePixH;
+            ctx.lineTo(cx, floorY);
+
+            // Inner Left Wall (inner floor to top)
+            for (let i = 0; i <= steps; i++) {
+                const u = i / steps;
+                const t = floorRatio + u * (1 - floorRatio);
+                const rIn = Math.max(2, evaluateBaseSplineRadius(t) - state.wallThickness) * scale;
+                const x = cx - rIn;
+                const y = bottomY - t * vasePixH;
+                ctx.lineTo(x, y);
+            }
+
+            // Outer Left Wall (top to bottom)
+            for (let i = steps; i >= 0; i--) {
+                const t = i / steps;
+                const r = evaluateBaseSplineRadius(t) * scale;
+                const x = cx - r;
+                const y = bottomY - t * vasePixH;
+                ctx.lineTo(x, y);
+            }
+
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw Control Point Knots on Right Profile
+            const knots = [
+                { t: 0, r: state.baseRadius, color: '#94a3b8' },
+                { t: state.bellyHeight / 100, r: state.bellyRadius, color: '#818cf8' },
+                { t: state.neckHeight / 100, r: state.neckRadius, color: '#c084fc' },
+                { t: 1, r: state.topRadius, color: '#38bdf8' }
+            ];
+
+            knots.forEach(k => {
+                const kx = cx + k.r * scale;
+                const ky = bottomY - k.t * vasePixH;
+                ctx.fillStyle = k.color;
+                ctx.beginPath();
+                ctx.arc(kx, ky, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw Vertical Height Clipping Line on 2D Profile if active (< 100%)
+            if (state.clipHeight < 100) {
+                const clipY = bottomY - (state.clipHeight / 100) * vasePixH;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(8, clipY);
+                ctx.lineTo(w - 8, clipY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            const badge = document.getElementById('profile-thickness-badge');
+            if (badge) badge.textContent = `${Number(state.wallThickness).toFixed(1)}mm`;
+        }
+
+        function updateLiveMetrics(geometry) {
+            // Compute Max Outer Diameter & Internal Capacity (mL)
+            let maxR = 0;
+            let volumeMM3 = 0;
+            const slices = 50;
+            const dh = state.height / slices;
+
+            for (let i = 0; i <= slices; i++) {
+                const t = i / slices;
+                const rOut = evaluateBaseSplineRadius(t) + state.ribDepth + state.waveAmp;
+                if (rOut > maxR) maxR = rOut;
+
+                if (i < slices) {
+                    const rIn = Math.max(0, evaluateBaseSplineRadius(t) - state.wallThickness);
+                    volumeMM3 += Math.PI * rIn * rIn * dh;
+                }
+            }
+
+            const diameter = Math.round(maxR * 2);
+            const height = Math.round(state.height);
+            const volumeML = Math.round(volumeMM3 / 1000);
+            const triCount = geometry.index ? (geometry.index.count / 3) : 0;
+
+            document.getElementById('stat-dimensions').textContent = `${diameter} × ${diameter} × ${height} mm`;
+            document.getElementById('stat-volume').textContent = `~${volumeML.toLocaleString()} mL`;
+            document.getElementById('stat-triangles').textContent = triCount.toLocaleString();
+        }
+
+        /***********************************************************************
+         * 5. BINARY STL EXPORT ENGINE (WATERTIGHT & Z-UP ORIENTED FOR SLICERS)
+         ***********************************************************************/
+        function exportBinarySTL() {
+            if (!vaseMesh || !vaseMesh.geometry) return;
+
+            const geometry = vaseMesh.geometry;
+            const posAttr = geometry.getAttribute('position');
+            const indexAttr = geometry.getIndex();
+            const numTriangles = indexAttr.count / 3;
+
+            // Binary STL Layout: 80-byte header + 4-byte uint32 count + (50 bytes * numTriangles)
+            const bufferSize = 84 + numTriangles * 50;
+            const arrayBuffer = new ArrayBuffer(bufferSize);
+            const dataView = new DataView(arrayBuffer);
+
+            // Write 80-byte ASCII Header
+            const headerStr = `VaseForge 3D Studio - Watertight Manifold STL (${state.height}mm H)`;
+            for (let i = 0; i < 80; i++) {
+                dataView.setUint8(i, i < headerStr.length ? headerStr.charCodeAt(i) : 0);
+            }
+
+            // Write Triangle Count (Little-Endian uint32)
+            dataView.setUint32(80, numTriangles, true);
+
+            const vA = new THREE.Vector3();
+            const vB = new THREE.Vector3();
+            const vC = new THREE.Vector3();
+            const cb = new THREE.Vector3();
+            const ab = new THREE.Vector3();
+
+            let offset = 84;
+
+            for (let i = 0; i < numTriangles; i++) {
+                const i0 = indexAttr.getX(i * 3);
+                const i1 = indexAttr.getX(i * 3 + 1);
+                const i2 = indexAttr.getX(i * 3 + 2);
+
+                // Convert from Three.js (Y-up) to 3D Printer Slicer coordinates (Z-up):
+                // (x, y, z) -> (x, -z, y) preserves right-handed winding and puts base on Z=0!
+                vA.set(posAttr.getX(i0), -posAttr.getZ(i0), posAttr.getY(i0));
+                vB.set(posAttr.getX(i1), -posAttr.getZ(i1), posAttr.getY(i1));
+                vC.set(posAttr.getX(i2), -posAttr.getZ(i2), posAttr.getY(i2));
+
+                // Compute Face Normal
+                cb.subVectors(vC, vB);
+                ab.subVectors(vA, vB);
+                cb.cross(ab).normalize();
+
+                // Write Normal (3x float32)
+                dataView.setFloat32(offset, cb.x, true); offset += 4;
+                dataView.setFloat32(offset, cb.y, true); offset += 4;
+                dataView.setFloat32(offset, cb.z, true); offset += 4;
+
+                // Write Vertex A
+                dataView.setFloat32(offset, vA.x, true); offset += 4;
+                dataView.setFloat32(offset, vA.y, true); offset += 4;
+                dataView.setFloat32(offset, vA.z, true); offset += 4;
+
+                // Write Vertex B
+                dataView.setFloat32(offset, vB.x, true); offset += 4;
+                dataView.setFloat32(offset, vB.y, true); offset += 4;
+                dataView.setFloat32(offset, vB.z, true); offset += 4;
+
+                // Write Vertex C
+                dataView.setFloat32(offset, vC.x, true); offset += 4;
+                dataView.setFloat32(offset, vC.y, true); offset += 4;
+                dataView.setFloat32(offset, vC.z, true); offset += 4;
+
+                // Write Attribute Byte Count (uint16 = 0)
+                dataView.setUint16(offset, 0, true); offset += 2;
+            }
+
+            // Trigger Download
+            const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const fileName = `vase_${state.height}mm_${state.ribCount}ribs.stl`;
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            const kbSize = (bufferSize / 1024).toFixed(0);
+            showToast(`Exported ${fileName}`, `${numTriangles.toLocaleString()} triangles • ${kbSize} KB binary STL`);
+        }
+
+        /**
+         * Exports Wavefront .OBJ file (with vertex positions, RGB vertex colors, normals, and faces)
+         */
+        function exportWavefrontOBJ() {
+            if (!vaseMesh || !vaseMesh.geometry) return;
+
+            const geometry = vaseMesh.geometry;
+            const posAttr = geometry.getAttribute('position');
+            const normAttr = geometry.getAttribute('normal');
+            const colAttr = geometry.getAttribute('color');
+            const indexAttr = geometry.getIndex();
+
+            const lines = [
+                `# VaseForge 3D Studio - Wavefront OBJ Export`,
+                `# Dimensions: ${state.height}mm Height, ${state.wallThickness}mm Wall`,
+                `o VaseForge_${state.height}mm`
+            ];
+
+            // Write Vertices (v x y z r g b)
+            for (let i = 0; i < posAttr.count; i++) {
+                const x = posAttr.getX(i).toFixed(4);
+                const y = posAttr.getY(i).toFixed(4);
+                const z = posAttr.getZ(i).toFixed(4);
+                const r = colAttr.getX(i).toFixed(4);
+                const g = colAttr.getY(i).toFixed(4);
+                const b = colAttr.getZ(i).toFixed(4);
+                lines.push(`v ${x} ${y} ${z} ${r} ${g} ${b}`);
+            }
+
+            // Write Vertex Normals (vn nx ny nz)
+            for (let i = 0; i < normAttr.count; i++) {
+                const nx = normAttr.getX(i).toFixed(4);
+                const ny = normAttr.getY(i).toFixed(4);
+                const nz = normAttr.getZ(i).toFixed(4);
+                lines.push(`vn ${nx} ${ny} ${nz}`);
+            }
+
+            // Write Triangle Faces (1-indexed: f v1//vn1 v2//vn2 v3//vn3)
+            const numTriangles = indexAttr.count / 3;
+            for (let i = 0; i < numTriangles; i++) {
+                const a = indexAttr.getX(i * 3) + 1;
+                const b = indexAttr.getX(i * 3 + 1) + 1;
+                const c = indexAttr.getX(i * 3 + 2) + 1;
+                lines.push(`f ${a}//${a} ${b}//${b} ${c}//${c}`);
+            }
+
+            const objContent = lines.join('\n');
+            const blob = new Blob([objContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const fileName = `vase_${state.height}mm_${state.ribCount}ribs.obj`;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            const kbSize = (blob.size / 1024).toFixed(0);
+            showToast(`Exported ${fileName}`, `${posAttr.count.toLocaleString()} vertices • ${kbSize} KB OBJ mesh`);
+        }
+
+        /**
+         * Exports Binary glTF 2.0 (.GLB) containing Geometry, Normals, Vertex Colors (COLOR_0), and PBR Material
+         */
+        function exportBinaryGLB() {
+            if (!vaseMesh || !vaseMesh.geometry) return;
+
+            const geometry = vaseMesh.geometry;
+            const posAttr = geometry.getAttribute('position');
+            const normAttr = geometry.getAttribute('normal');
+            const colAttr = geometry.getAttribute('color');
+            const indexAttr = geometry.getIndex();
+
+            const vertexCount = posAttr.count;
+            const indexCount = indexAttr.count;
+
+            // Convert millimeters to meters (0.001 scale) for standard glTF viewers while keeping exact geometry
+            const indicesArray = new Uint32Array(indexCount);
+            for (let i = 0; i < indexCount; i++) {
+                indicesArray[i] = indexAttr.getX(i);
+            }
+
+            const posArray = new Float32Array(vertexCount * 3);
+            const normArray = new Float32Array(vertexCount * 3);
+            const colArray = new Float32Array(vertexCount * 3);
+
+            const minPos = [Infinity, Infinity, Infinity];
+            const maxPos = [-Infinity, -Infinity, -Infinity];
+
+            for (let i = 0; i < vertexCount; i++) {
+                const px = posAttr.getX(i);
+                const py = posAttr.getY(i);
+                const pz = posAttr.getZ(i);
+
+                posArray[i * 3] = px;
+                posArray[i * 3 + 1] = py;
+                posArray[i * 3 + 2] = pz;
+
+                if (px < minPos[0]) minPos[0] = px;
+                if (py < minPos[1]) minPos[1] = py;
+                if (pz < minPos[2]) minPos[2] = pz;
+                if (px > maxPos[0]) maxPos[0] = px;
+                if (py > maxPos[1]) maxPos[1] = py;
+                if (pz > maxPos[2]) maxPos[2] = pz;
+
+                normArray[i * 3] = normAttr.getX(i);
+                normArray[i * 3 + 1] = normAttr.getY(i);
+                normArray[i * 3 + 2] = normAttr.getZ(i);
+
+                colArray[i * 3] = colAttr.getX(i);
+                colArray[i * 3 + 1] = colAttr.getY(i);
+                colArray[i * 3 + 2] = colAttr.getZ(i);
+            }
+
+            // Byte lengths for BIN chunk
+            const indicesByteLen = indicesArray.byteLength;
+            const posByteLen = posArray.byteLength;
+            const normByteLen = normArray.byteLength;
+            const colByteLen = colArray.byteLength;
+
+            const offsetIndices = 0;
+            const offsetPos = offsetIndices + indicesByteLen;
+            const offsetNorm = offsetPos + posByteLen;
+            const offsetCol = offsetNorm + normByteLen;
+            const totalBinUnpadded = offsetCol + colByteLen;
+            const binChunkLength = Math.ceil(totalBinUnpadded / 4) * 4;
+
+            // Material PBR settings matching active finish
+            let roughness = 0.16;
+            let metallic = 0.08;
+            if (state.finish === 'clay') { roughness = 0.82; metallic = 0.04; }
+            else if (state.finish === 'metallic') { roughness = 0.25; metallic = 0.72; }
+            else if (state.finish === 'glass') { roughness = 0.15; metallic = 0.05; }
+
+            const gltfJson = {
+                asset: { version: "2.0", generator: "VaseForge 3D Studio" },
+                scene: 0,
+                scenes: [{ nodes: [0] }],
+                nodes: [{ name: "ParametricVase", mesh: 0 }],
+                materials: [{
+                    name: `Vase_${state.finish}`,
+                    doubleSided: true,
+                    pbrMetallicRoughness: {
+                        baseColorFactor: [1, 1, 1, state.finish === 'glass' ? 0.78 : 1.0],
+                        metallicFactor: metallic,
+                        roughnessFactor: roughness
+                    },
+                    alphaMode: state.finish === 'glass' ? "BLEND" : "OPAQUE"
+                }],
+                meshes: [{
+                    name: "VaseMesh",
+                    primitives: [{
+                        attributes: {
+                            POSITION: 1,
+                            NORMAL: 2,
+                            COLOR_0: 3
+                        },
+                        indices: 0,
+                        material: 0
+                    }]
+                }],
+                accessors: [
+                    {
+                        bufferView: 0,
+                        byteOffset: 0,
+                        componentType: 5125, // UNSIGNED_INT
+                        count: indexCount,
+                        type: "SCALAR"
+                    },
+                    {
+                        bufferView: 1,
+                        byteOffset: 0,
+                        componentType: 5126, // FLOAT
+                        count: vertexCount,
+                        type: "VEC3",
+                        min: minPos,
+                        max: maxPos
+                    },
+                    {
+                        bufferView: 2,
+                        byteOffset: 0,
+                        componentType: 5126, // FLOAT
+                        count: vertexCount,
+                        type: "VEC3"
+                    },
+                    {
+                        bufferView: 3,
+                        byteOffset: 0,
+                        componentType: 5126, // FLOAT
+                        count: vertexCount,
+                        type: "VEC3"
+                    }
+                ],
+                bufferViews: [
+                    { buffer: 0, byteOffset: offsetIndices, byteLength: indicesByteLen, target: 34963 },
+                    { buffer: 0, byteOffset: offsetPos, byteLength: posByteLen, target: 34962 },
+                    { buffer: 0, byteOffset: offsetNorm, byteLength: normByteLen, target: 34962 },
+                    { buffer: 0, byteOffset: offsetCol, byteLength: colByteLen, target: 34962 }
+                ],
+                buffers: [{ byteLength: binChunkLength }]
+            };
+
+            const encoder = new TextEncoder();
+            const jsonBytes = encoder.encode(JSON.stringify(gltfJson));
+            const jsonChunkLength = Math.ceil(jsonBytes.byteLength / 4) * 4;
+
+            const totalFileLength = 12 + 8 + jsonChunkLength + 8 + binChunkLength;
+            const glbBuffer = new ArrayBuffer(totalFileLength);
+            const dataView = new DataView(glbBuffer);
+            const uint8View = new Uint8Array(glbBuffer);
+
+            // 1. 12-Byte GLB Header
+            dataView.setUint32(0, 0x46546C67, true); // 'glTF' magic
+            dataView.setUint32(4, 2, true);          // version 2
+            dataView.setUint32(8, totalFileLength, true);
+
+            // 2. JSON Chunk Header & Payload (padded with 0x20 spaces)
+            dataView.setUint32(12, jsonChunkLength, true);
+            dataView.setUint32(16, 0x4E4F534A, true); // 'JSON'
+            uint8View.fill(0x20, 20, 20 + jsonChunkLength);
+            uint8View.set(jsonBytes, 20);
+
+            // 3. BIN Chunk Header & Payload
+            const binHeaderOffset = 20 + jsonChunkLength;
+            dataView.setUint32(binHeaderOffset, binChunkLength, true);
+            dataView.setUint32(binHeaderOffset + 4, 0x004E4942, true); // 'BIN\0'
+
+            const binStart = binHeaderOffset + 8;
+            uint8View.set(new Uint8Array(indicesArray.buffer), binStart + offsetIndices);
+            uint8View.set(new Uint8Array(posArray.buffer), binStart + offsetPos);
+            uint8View.set(new Uint8Array(normArray.buffer), binStart + offsetNorm);
+            uint8View.set(new Uint8Array(colArray.buffer), binStart + offsetCol);
+
+            const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
+            const url = URL.createObjectURL(blob);
+            const fileName = `vase_${state.height}mm_${state.finish}.glb`;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            const kbSize = (totalFileLength / 1024).toFixed(0);
+            showToast(`Exported ${fileName}`, `glTF 2.0 Binary with PBR & Colors • ${kbSize} KB`);
+        }
+
+        /**
+         * Exports a high-resolution PNG snapshot of the 3D Vase with a 100% transparent background
+         */
+        function exportRenderPNG(transparent = true) {
+            if (!renderer || !scene || !camera) return;
+
+            const prevBackground = scene.background;
+            const prevGridVis = gridHelper ? gridHelper.visible : true;
+            const prevFloorVis = floorShadowMesh ? floorShadowMesh.visible : true;
+
+            if (transparent) {
+                scene.background = null;
+                if (gridHelper) gridHelper.visible = false;
+                if (floorShadowMesh) floorShadowMesh.visible = false;
+                renderer.setClearColor(0x000000, 0);
+            }
+
+            // Render a fresh frame with transparent background before capturing canvas data
+            renderer.render(scene, camera);
+            const dataURL = renderer.domElement.toDataURL('image/png');
+
+            // Restore Studio Environment immediately
+            if (transparent) {
+                scene.background = prevBackground;
+                if (gridHelper) gridHelper.visible = prevGridVis;
+                if (floorShadowMesh) floorShadowMesh.visible = prevFloorVis;
+                renderer.render(scene, camera);
+            }
+
+            const fileName = `vase_render_${state.height}mm_transparent.png`;
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`Saved ${fileName}`, `High-res Transparent PNG image downloaded.`);
+        }
+
+        /**
+         * Exports all 4 formats sequentially (STL, OBJ, GLB, and Transparent PNG)
+         */
+        function exportAllFormats() {
+            exportBinarySTL();
+            setTimeout(() => {
+                exportWavefrontOBJ();
+            }, 220);
+            setTimeout(() => {
+                exportBinaryGLB();
+            }, 440);
+            setTimeout(() => {
+                exportRenderPNG(true);
+                showToast(
+                    'All 4 Formats Exported!',
+                    'Downloaded .STL, .OBJ, .GLB & Transparent .PNG'
+                );
+            }, 660);
+        }
+
+        /**
+         * Updates the Vertical / Height Clipping slider in real-time
+         */
+        function updateClipHeight(val) {
+            state.clipHeight = parseFloat(val);
+            const clipMM = Math.round((state.clipHeight / 100) * state.height);
+
+            const vpSlider = document.getElementById('viewport-slider-clipHeight');
+            const vpLabel = document.getElementById('viewport-val-clipHeight');
+            const sideSlider = document.getElementById('slider-clipHeight');
+            const sideLabel = document.getElementById('val-clipHeight');
+
+            if (vpSlider) vpSlider.value = state.clipHeight;
+            if (vpLabel) vpLabel.textContent = `${Math.round(state.clipHeight)}%`;
+            if (sideSlider) sideSlider.value = state.clipHeight;
+            if (sideLabel) sideLabel.textContent = `${Math.round(state.clipHeight)}% (${clipMM} mm)`;
+
+            const activePlanes = getActiveClippingPlanes();
+            if (vaseMesh && vaseMesh.material) {
+                vaseMesh.material.clippingPlanes = activePlanes;
+                vaseMesh.material.needsUpdate = true;
+            }
+            if (wireframeMesh && wireframeMesh.material) {
+                wireframeMesh.material.clippingPlanes = activePlanes;
+                wireframeMesh.material.needsUpdate = true;
+            }
+
+            draw2DProfilePreview();
+        }
+
+        /**
+         * Toggles between Dark Mode and Light Mode (UI + 3D Studio Scene)
+         */
+        function toggleTheme() {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            const htmlEl = document.documentElement;
+            const iconSun = document.getElementById('icon-sun');
+            const iconMoon = document.getElementById('icon-moon');
+            const themeLabel = document.getElementById('theme-label');
+
+            if (state.theme === 'light') {
+                htmlEl.classList.remove('dark');
+                htmlEl.classList.add('light');
+                iconSun.classList.add('hidden');
+                iconMoon.classList.remove('hidden');
+                if (themeLabel) themeLabel.textContent = 'Dark';
+
+                if (scene) {
+                    scene.background = new THREE.Color(0xe2e8f0);
+                }
+                if (gridHelper) {
+                    scene.remove(gridHelper);
+                    gridHelper = new THREE.GridHelper(320, 16, 0x94a3b8, 0xcbd5e1);
+                    gridHelper.position.y = -0.2;
+                    scene.add(gridHelper);
+                }
+                if (floorShadowMesh) {
+                    floorShadowMesh.material.opacity = 0.18;
+                }
+            } else {
+                htmlEl.classList.remove('light');
+                htmlEl.classList.add('dark');
+                iconSun.classList.remove('hidden');
+                iconMoon.classList.add('hidden');
+                if (themeLabel) themeLabel.textContent = 'Light';
+
+                if (scene) {
+                    scene.background = new THREE.Color(0x0a0b0e);
+                }
+                if (gridHelper) {
+                    scene.remove(gridHelper);
+                    gridHelper = new THREE.GridHelper(320, 16, 0x374151, 0x1f2937);
+                    gridHelper.position.y = -0.2;
+                    scene.add(gridHelper);
+                }
+                if (floorShadowMesh) {
+                    floorShadowMesh.material.opacity = 0.35;
+                }
+            }
+
+            rebuildVaseMesh();
+        }
+
+        function showToast(title, desc) {
+            const toast = document.getElementById('toast-notification');
+            document.getElementById('toast-title').textContent = title;
+            document.getElementById('toast-desc').textContent = desc;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 3600);
+        }
+
+        /***********************************************************************
+         * 6. UI CONTROLS, TABS, PRESETS & EVENT HANDLERS
+         ***********************************************************************/
+        function formatParamUnit(key, val) {
+            const n = Number(val);
+            switch (key) {
+                case 'height':
+                case 'topRadius':
+                case 'neckRadius':
+                case 'bellyRadius':
+                case 'baseRadius':
+                    return `${Math.round(n)} mm`;
+                case 'wallThickness':
+                case 'ribDepth':
+                case 'waveAmp':
+                    return `${n.toFixed(1)} mm`;
+                case 'neckHeight':
+                case 'bellyHeight':
+                    return `${Math.round(n)}%`;
+                case 'twistAngle':
+                    return `${Math.round(n)}°`;
+                case 'waveFreq':
+                    return n.toFixed(1);
+                default:
+                    return `${Math.round(n)}`;
+            }
+        }
+
+        function updateParam(key, value) {
+            state[key] = parseFloat(value);
+
+            // Ensure neckHeight stays above bellyHeight
+            if (key === 'bellyHeight' && state.bellyHeight >= state.neckHeight - 5) {
+                state.neckHeight = Math.min(90, state.bellyHeight + 8);
+                document.getElementById('slider-neckHeight').value = state.neckHeight;
+                document.getElementById('val-neckHeight').textContent = formatParamUnit('neckHeight', state.neckHeight);
+            }
+            if (key === 'neckHeight' && state.neckHeight <= state.bellyHeight + 5) {
+                state.bellyHeight = Math.max(12, state.neckHeight - 8);
+                document.getElementById('slider-bellyHeight').value = state.bellyHeight;
+                document.getElementById('val-bellyHeight').textContent = formatParamUnit('bellyHeight', state.bellyHeight);
+            }
+
+            const labelEl = document.getElementById(`val-${key}`);
+            if (labelEl) {
+                labelEl.textContent = formatParamUnit(key, state[key]);
+            }
+
+            if (key === 'height') {
+                updateClipHeight(state.clipHeight);
+            }
+
+            rebuildVaseMesh();
+        }
+
+        function syncAllUIControls() {
+            const sliderKeys = [
+                'height', 'wallThickness', 'topRadius', 'neckRadius', 'neckHeight',
+                'bellyRadius', 'bellyHeight', 'baseRadius', 'ribCount', 'ribDepth',
+                'twistAngle', 'waveFreq', 'waveAmp', 'radialSegments', 'heightSegments'
+            ];
+
+            sliderKeys.forEach(k => {
+                const slider = document.getElementById(`slider-${k}`);
+                const label = document.getElementById(`val-${k}`);
+                if (slider) slider.value = state[k];
+                if (label) label.textContent = formatParamUnit(k, state[k]);
+            });
+
+            updateClipHeight(state.clipHeight);
+
+            // Color pickers
+            document.getElementById('picker-primary').value = state.primaryColor;
+            document.getElementById('hex-primary').textContent = state.primaryColor.toUpperCase();
+            document.getElementById('picker-secondary').value = state.secondaryColor;
+            document.getElementById('hex-secondary').textContent = state.secondaryColor.toUpperCase();
+
+            // Gradient toggle UI
+            const btnGrad = document.getElementById('btn-gradient');
+            const dotGrad = document.getElementById('dot-gradient');
+            const secRow = document.getElementById('secondary-color-row');
+            if (state.useGradient) {
+                btnGrad.className = 'w-11 h-6 rounded-full bg-indigo-600 p-0.5 transition flex items-center';
+                dotGrad.className = 'w-5 h-5 rounded-full bg-white transition transform translate-x-5';
+                secRow.style.opacity = '1';
+                secRow.style.pointerEvents = 'auto';
+            } else {
+                btnGrad.className = 'w-11 h-6 rounded-full bg-studio-700 p-0.5 transition flex items-center';
+                dotGrad.className = 'w-5 h-5 rounded-full bg-gray-300 transition transform';
+                secRow.style.opacity = '0.4';
+                secRow.style.pointerEvents = 'none';
+            }
+
+            // Flat Shading toggle UI
+            const btnFlat = document.getElementById('btn-flat-shading');
+            const dotFlat = document.getElementById('dot-flat-shading');
+            if (state.flatShading) {
+                btnFlat.className = 'w-11 h-6 rounded-full bg-indigo-600 p-0.5 transition flex items-center';
+                dotFlat.className = 'w-5 h-5 rounded-full bg-white transition transform translate-x-5';
+            } else {
+                btnFlat.className = 'w-11 h-6 rounded-full bg-studio-700 p-0.5 transition flex items-center';
+                dotFlat.className = 'w-5 h-5 rounded-full bg-gray-300 transition transform';
+            }
+
+            // Finish buttons
+            ['ceramic', 'clay', 'metallic', 'glass'].forEach(f => {
+                const btn = document.getElementById(`finish-${f}`);
+                if (!btn) return;
+                if (state.finish === f) {
+                    btn.className = 'finish-btn p-2.5 rounded-xl border border-indigo-500/50 bg-indigo-600/20 text-left transition';
+                } else {
+                    btn.className = 'finish-btn p-2.5 rounded-xl border border-white/5 bg-studio-900 hover:bg-white/5 text-left transition';
+                }
+            });
+        }
+
+        function switchTab(tabName) {
+            ['dimensions', 'surface', 'colors'].forEach(t => {
+                const content = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (t === tabName) {
+                    content.classList.remove('hidden');
+                    btn.className = 'tab-btn py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
+                } else {
+                    content.classList.add('hidden');
+                    btn.className = 'tab-btn py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 text-gray-400 hover:text-white hover:bg-white/5 transition';
+                }
+            });
+        }
+
+        function initSwatches() {
+            const grid = document.getElementById('swatch-grid');
+            grid.innerHTML = '';
+            SWATCHES.forEach((s, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full aspect-square rounded-xl border-2 border-white/15 hover:scale-110 transition relative overflow-hidden shadow-md';
+                btn.style.background = `linear-gradient(135deg, ${s.primary} 0%, ${s.secondary} 100%)`;
+                btn.title = s.name;
+                btn.onclick = () => {
+                    state.primaryColor = s.primary;
+                    state.secondaryColor = s.secondary;
+                    document.getElementById('active-color-name').textContent = s.name;
+                    syncAllUIControls();
+                    rebuildVaseMesh();
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateCustomColor(which, hexVal) {
+            if (which === 'primary') {
+                state.primaryColor = hexVal;
+                document.getElementById('hex-primary').textContent = hexVal.toUpperCase();
+            } else {
+                state.secondaryColor = hexVal;
+                document.getElementById('hex-secondary').textContent = hexVal.toUpperCase();
+            }
+            document.getElementById('active-color-name').textContent = 'Custom Blend';
+            rebuildVaseMesh();
+        }
+
+        function toggleGradient() {
+            state.useGradient = !state.useGradient;
+            syncAllUIControls();
+            rebuildVaseMesh();
+        }
+
+        function swapGradientColors() {
+            const tmp = state.primaryColor;
+            state.primaryColor = state.secondaryColor;
+            state.secondaryColor = tmp;
+            syncAllUIControls();
+            rebuildVaseMesh();
+        }
+
+        function setFinish(finishType) {
+            state.finish = finishType;
+            syncAllUIControls();
+            rebuildVaseMesh();
+        }
+
+        function setQuickSides(numSides) {
+            state.radialSegments = numSides;
+            state.flatShading = (numSides <= 16);
+            syncAllUIControls();
+            rebuildVaseMesh();
+        }
+
+        function toggleFlatShading() {
+            state.flatShading = !state.flatShading;
+            syncAllUIControls();
+            rebuildVaseMesh();
+        }
+
+        function toggleAutoRotate() {
+            state.autoRotate = !state.autoRotate;
+            const btn = document.getElementById('btn-autorotate');
+            if (state.autoRotate) {
+                btn.classList.add('text-indigo-300', 'border-indigo-500/40');
+                btn.classList.remove('text-gray-300');
+            } else {
+                btn.classList.remove('text-indigo-300', 'border-indigo-500/40');
+                btn.classList.add('text-gray-300');
+            }
+        }
+
+        function toggleWireframe() {
+            state.wireframe = !state.wireframe;
+            const btn = document.getElementById('btn-wireframe');
+            if (state.wireframe) {
+                btn.classList.add('text-indigo-300', 'border-indigo-500/40');
+                btn.classList.remove('text-gray-300');
+            } else {
+                btn.classList.remove('text-indigo-300', 'border-indigo-500/40');
+                btn.classList.add('text-gray-300');
+            }
+            rebuildVaseMesh();
+        }
+
+        function toggleCutaway() {
+            state.cutaway = !state.cutaway;
+            const btn = document.getElementById('btn-cutaway');
+            if (state.cutaway) {
+                btn.classList.add('text-amber-300', 'border-amber-500/40');
+                btn.classList.remove('text-gray-300');
+            } else {
+                btn.classList.remove('text-amber-300', 'border-amber-500/40');
+                btn.classList.add('text-gray-300');
+            }
+            rebuildVaseMesh();
+        }
+
+        function resetCamera() {
+            camState.theta = 0.6;
+            camState.phi = 1.15;
+            camState.radius = 340;
+            camState.targetY = state.height * 0.48;
+            updateCameraTransform();
+        }
+
+        function applyPreset(presetName) {
+            const p = PRESETS[presetName];
+            if (!p) return;
+            Object.assign(state, p);
+            camState.targetY = state.height * 0.48;
+            updateCameraTransform();
+            syncAllUIControls();
+            rebuildVaseMesh();
+        }
+
+        function randomizeVase() {
+            const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+            const swatch = SWATCHES[randInt(0, SWATCHES.length - 1)];
+            const finishes = ['ceramic', 'clay', 'metallic', 'glass'];
+
+            state.height = randInt(120, 250);
+            state.baseRadius = randInt(26, 58);
+            state.bellyRadius = randInt(38, 88);
+            state.bellyHeight = randInt(22, 45);
+            state.neckRadius = randInt(18, 64);
+            state.neckHeight = randInt(62, 85);
+            state.topRadius = randInt(22, 68);
+            state.ribCount = Math.random() > 0.2 ? randInt(6, 32) : 0;
+            state.ribDepth = state.ribCount > 0 ? randInt(2, 12) * 0.5 : 0;
+            state.twistAngle = randInt(-18, 18) * 10;
+
+            if (Math.random() > 0.65) {
+                state.waveFreq = randInt(2, 8) * 0.5;
+                state.waveAmp = randInt(2, 10) * 0.5;
+            } else {
+                state.waveFreq = 0;
+                state.waveAmp = 0;
+            }
+
+            if (Math.random() > 0.8) {
+                // Low-poly geometric style
+                const lowPolySides = [5, 6, 7, 8, 10, 12];
+                state.radialSegments = lowPolySides[randInt(0, lowPolySides.length - 1)];
+                state.heightSegments = randInt(16, 36);
+                state.flatShading = true;
+            } else {
+                state.radialSegments = 128;
+                state.heightSegments = 96;
+                state.flatShading = false;
+            }
+
+            state.primaryColor = swatch.primary;
+            state.secondaryColor = swatch.secondary;
+            state.useGradient = Math.random() > 0.2;
+            state.finish = finishes[randInt(0, finishes.length - 1)];
+            document.getElementById('active-color-name').textContent = swatch.name;
+
+            syncAllUIControls();
+            rebuildVaseMesh();
+        }
+
+        /***********************************************************************
+         * 7. ANIMATION LOOP & INITIALIZATION
+         ***********************************************************************/
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (state.autoRotate && vaseMesh && !camState.isDragging) {
+                vaseMesh.rotation.y += 0.0045;
+            }
+
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        window.onload = function () {
+            initSwatches();
+            syncAllUIControls();
+            initThreeScene();
+            animate();
+        };
+    </script>
+</body>
+</html>
