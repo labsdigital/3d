@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TessellaLock Studio 3D — Parametric Interlocking Container Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root[data-theme="dark"] {
+      --bg-app: #0f1216;
+      --bg-panel: #161b22;
+      --bg-card: #1d242d;
+      --bg-input: #11161c;
+      --bg-glass: rgba(22, 27, 34, 0.85);
+      --text-main: #e6edf3;
+      --text-muted: #8b949e;
+      --border: #2c3540;
+      --accent: #d9a35b;
+      --accent-hover: #e8b670;
+      --cyan: #4ea8de;
+      --male-color: #e0603a;
+      --female-color: #3aa0e0;
+      --warn-bg: rgba(224, 122, 58, 0.16);
+      --warn-border: #e07a3a;
+      --warn-text: #ffab70;
+    }
+    :root[data-theme="light"] {
+      --bg-app: #f0f3f6;
+      --bg-panel: #ffffff;
+      --bg-card: #f6f8fa;
+      --bg-input: #eaeef2;
+      --bg-glass: rgba(255, 255, 255, 0.88);
+      --text-main: #1f2328;
+      --text-muted: #59636e;
+      --border: #d0d7de;
+      --accent: #b87d32;
+      --accent-hover: #9e6823;
+      --cyan: #1f78b4;
+      --male-color: #d9532f;
+      --female-color: #2b8cbe;
+      --warn-bg: rgba(217, 83, 47, 0.12);
+      --warn-border: #d9532f;
+      --warn-text: #a83215;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg-app);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+    }
+
+    @media (max-width: 820px) {
+      body {
+        display: block;
+        height: auto;
+        overflow-y: auto;
+      }
+      #viewport-area {
+        position: sticky;
+        top: 0;
+        height: 62vh !important;
+        z-index: 20;
+      }
+      #sidebar {
+        height: auto !important;
+        overflow: visible !important;
+      }
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .brand-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--bg-panel);
+      z-index: 10;
+    }
+    .brand-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      background: var(--accent);
+      color: #0f1216;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .preset-bar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .preset-bar label {
+      display: block;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .preset-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    select, input[type="number"], button {
+      font-family: inherit;
+      font-size: 0.82rem;
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 6px 8px;
+      outline: none;
+    }
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+    button {
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    button:hover {
+      border-color: var(--accent);
+      background: var(--bg-card);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      color: #000;
+    }
+
+    /* ACCORDION GROUPS */
+    .param-group {
+      border-bottom: 1px solid var(--border);
+    }
+    .group-header {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--bg-panel);
+      border: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--text-main);
+      text-align: left;
+    }
+    .group-header:hover {
+      background: var(--bg-card);
+    }
+    .group-body {
+      padding: 10px 16px 14px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--bg-card);
+    }
+    .param-group.open .group-body {
+      display: flex;
+    }
+    .group-chevron {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+    .param-group.open .group-chevron {
+      transform: rotate(90deg);
+      color: var(--accent);
+    }
+
+    /* CONTROLS */
+    .ctrl-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ctrl-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+    }
+    .ctrl-label {
+      color: var(--text-main);
+    }
+    .ctrl-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+    .ctrl-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .ctrl-row.inline-check {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 0;
+    }
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    input[type="color"] {
+      width: 42px;
+      height: 26px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: none;
+      cursor: pointer;
+    }
+
+    /* EXPORT FOOTER */
+    .export-panel {
+      padding: 14px 16px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    /* VIEWPORT AREA */
+    #viewport-area {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      background: radial-gradient(circle at 50% 45%, #1c2430 0%, #0d1015 100%);
+      overflow: hidden;
+    }
+    :root[data-theme="light"] #viewport-area {
+      background: radial-gradient(circle at 50% 45%, #ffffff 0%, #dce3ea 100%);
+    }
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* OVERLAY TOOLBARS */
+    .overlay-top {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .toolbar-card {
+      pointer-events: auto;
+      background: var(--bg-glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .toolbar-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+    .pill-btn {
+      font-size: 0.74rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .pill-btn.active {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* SLIDE ENGAGE FLOATING BAR */
+    .engage-floater {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      pointer-events: auto;
+      background: var(--bg-glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      min-width: 290px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .engage-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    /* HUD STATS */
+    .hud-card {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      pointer-events: auto;
+      background: var(--bg-glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      width: 310px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.73rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .hud-heading {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .hud-row span:first-child {
+      color: var(--text-muted);
+    }
+    .hud-warn {
+      margin-top: 4px;
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      color: var(--warn-text);
+      font-size: 0.7rem;
+      line-height: 1.35;
+      display: none;
+    }
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT CONTROL PANEL -->
+  <aside id="sidebar">
+    <div class="brand-header">
+      <div class="brand-title">
+        <span>TessellaLock Studio</span>
+        <span class="brand-badge">3D CAD</span>
+      </div>
+      <button id="theme-toggle" title="Toggle Dark/Light Theme">◐ Theme</button>
+    </div>
+
+    <div class="preset-bar">
+      <label for="preset-select">Engineering Presets (7 Ready-to-Print Modules)</label>
+      <div class="preset-row">
+        <select id="preset-select" style="flex:1"></select>
+        <button id="btn-reset" title="Reset current preset">↺</button>
+      </div>
+    </div>
+
+    <div id="schema-container"></div>
+
+    <div class="export-panel">
+      <div style="font-size:0.74rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">
+        Manufacturing & CAD Export (mm)
+      </div>
+      <div class="export-grid">
+        <button id="exp-stl" class="btn-primary">.STL (Z-Up)</button>
+        <button id="exp-obj">.OBJ (Color)</button>
+        <button id="exp-glb">.GLB (AR)</button>
+        <button id="exp-png">.PNG (2048px)</button>
+        <button id="exp-json">Save .JSON</button>
+        <button id="imp-json-btn">Load .JSON</button>
+      </div>
+      <button id="exp-zip" class="btn-primary" style="width:100%; padding:8px;">
+        📦 Export All Bundle (.ZIP + PRINT_GUIDE.txt)
+      </button>
+      <input type="file" id="imp-json-file" accept=".json" style="display:none" />
+    </div>
+  </aside>
+
+  <!-- RIGHT 3D VIEWPORT -->
+  <main id="viewport-area">
+    <canvas id="three-canvas"></canvas>
+
+    <div class="overlay-top">
+      <!-- Assembly Preview Bar -->
+      <div class="toolbar-card">
+        <span class="toolbar-title">Tessellation:</span>
+        <button class="pill-btn" data-asm="single">1×1</button>
+        <button class="pill-btn active" data-asm="pair-1x2">1×2 Lock</button>
+        <button class="pill-btn" data-asm="cluster-3">Honeycomb 3</button>
+        <button class="pill-btn" data-asm="grid-2x2">2×2 Grid</button>
+        <button class="pill-btn" data-asm="vertical-stack">Stack 2Z</button>
+      </div>
+
+      <!-- Camera & Section Tools -->
+      <div class="toolbar-card">
+        <span class="toolbar-title">View:</span>
+        <button class="pill-btn" data-cam="iso">Iso</button>
+        <button class="pill-btn" data-cam="top">Top (XY Lock)</button>
+        <button class="pill-btn" data-cam="front">Front</button>
+        <button class="pill-btn" data-cam="side">Side</button>
+        <span style="color:var(--border)">|</span>
+        <button class="pill-btn" id="btn-sec-y">✂ Section Y (Clearance)</button>
+        <button class="pill-btn" id="btn-sec-x">✂ Section X</button>
+      </div>
+    </div>
+
+    <!-- Slide / Lock Engagement Interactive Slider -->
+    <div class="engage-floater">
+      <div class="engage-header">
+        <span>Slide / Lock Engagement</span>
+        <span id="engage-readout" style="font-family:'IBM Plex Mono',monospace; color:var(--accent)">85%</span>
+      </div>
+      <input type="range" id="engage-slider" min="0" max="100" step="1" value="85" style="width:100%" />
+      <div id="section-slider-wrap" style="display:none; margin-top:8px; padding-top:6px; border-top:1px solid var(--border)">
+        <div class="engage-header">
+          <span>Section Plane Height / Offset</span>
+          <span id="sec-readout" style="font-family:'IBM Plex Mono',monospace; color:var(--cyan)">50%</span>
+        </div>
+        <input type="range" id="sec-slider" min="5" max="95" step="1" value="50" style="width:100%" />
+      </div>
+    </div>
+
+    <!-- DfAM Engineering HUD -->
+    <div class="hud-card">
+      <div class="hud-heading">
+        <span>DFAM & LOCK TELEMETRY</span>
+        <span id="hud-buildtime">0 ms</span>
+      </div>
+      <div class="hud-row"><span>Footprint (W×D×H):</span><strong id="hud-dims">-</strong></div>
+      <div class="hud-row"><span>Tessellation Pitch:</span><strong id="hud-pitch">-</strong></div>
+      <div class="hud-row"><span>Neck / Head Width:</span><strong id="hud-lockdims">-</strong></div>
+      <div class="hud-row"><span>Material Volume:</span><strong id="hud-vol">-</strong></div>
+      <div class="hud-row"><span>Est. Filament Mass:</span><strong id="hud-mass">-</strong></div>
+      <div class="hud-row"><span>Internal Capacity:</span><strong id="hud-cap">-</strong></div>
+      <div class="hud-row">
+        <span>Joint Legend:</span>
+        <span>
+          <span class="legend-dot" style="background:#e07a3a"></span>Male (Out)
+          <span class="legend-dot" style="background:#3a90b8; margin-left:6px;"></span>Female (In)
+        </span>
+      </div>
+      <div class="hud-warn" id="hud-warning"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+    import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
+    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
+
+    // ============================================================================
+    // 1. PARAMETER SCHEMA (65+ Parameters across 8 Groups)
+    // ============================================================================
+    const SCHEMA = [
+      {
+        id: 'geometry',
+        title: '1. Base Shape & Tessellation',
+        open: true,
+        params: [
+          { key: 'baseShape', label: 'Base footprint shape', type: 'select', options: ['box', 'hexagon', 'octagon', 'triangle', 'circle-collar', 'multigon'], default: 'hexagon' },
+          { key: 'polySides', label: 'Multigon sides (if multigon)', type: 'range', min: 3, max: 12, step: 1, default: 6 },
+          { key: 'outerWidth', label: 'Outer width / pitch (flat-to-flat)', type: 'range', min: 25, max: 250, step: 0.5, default: 70, unit: 'mm' },
+          { key: 'outerDepth', label: 'Outer depth (for box shape)', type: 'range', min: 25, max: 250, step: 0.5, default: 70, unit: 'mm' },
+          { key: 'height', label: 'Total height', type: 'range', min: 15, max: 220, step: 0.5, default: 55, unit: 'mm' },
+          { key: 'cornerRadius', label: 'Vertical corner fillet', type: 'range', min: 0.5, max: 20, step: 0.5, default: 3.5, unit: 'mm' },
+          { key: 'wallThickness', label: 'Wall thickness', type: 'range', min: 1.2, max: 8, step: 0.1, default: 2.6, unit: 'mm' },
+          { key: 'baseThickness', label: 'Bottom floor thickness', type: 'range', min: 1.2, max: 10, step: 0.1, default: 2.4, unit: 'mm' }
+        ]
+      },
+      {
+        id: 'mechanism',
+        title: '2. Interlock Strategy & Joint Type',
+        open: true,
+        params: [
+          { key: 'jointType', label: 'Locking mechanism', type: 'select', options: ['dovetail', 'snap-cantilever', 'magnetic', 't-slot', 'puzzle', 'none'], default: 'dovetail' },
+          { key: 'polarityMode', label: 'Polarity layout', type: 'select', options: ['hermaphroditic', 'alternating', 'all-female-clip'], default: 'hermaphroditic' },
+          { key: 'activeSides', label: 'Active sides mask', type: 'select', options: ['all', 'opposite-2', 'adjacent-2', 'front-only', 'custom-step'], default: 'all' },
+          { key: 'jointsPerSide', label: 'Connectors per flat wall', type: 'range', min: 1, max: 3, step: 1, default: 1 },
+          { key: 'hermSplit', label: 'Hermaphrodite split mode', type: 'select', options: ['side-by-side', 'top-bottom'], default: 'side-by-side' },
+          { key: 'hermSpacing', label: 'Hermaphrodite pair offset', type: 'range', min: 8, max: 60, step: 0.5, default: 16, unit: 'mm' }
+        ]
+      },
+      {
+        id: 'profile',
+        title: '3. Joint Dimensions & Undercut',
+        open: true,
+        params: [
+          { key: 'jointDepth', label: 'Protrusion / socket depth', type: 'range', min: 1.5, max: 10, step: 0.1, default: 3.4, unit: 'mm' },
+          { key: 'jointWidth', label: 'Neck width (narrow base)', type: 'range', min: 3.5, max: 26, step: 0.2, default: 6.8, unit: 'mm' },
+          { key: 'dovetailAngle', label: 'Dovetail flare angle', type: 'range', min: 20, max: 65, step: 1, default: 45, unit: '°' },
+          { key: 'jointHeightFrac', label: 'Vertical span of joint', type: 'range', min: 0.2, max: 0.96, step: 0.02, default: 0.80 },
+          { key: 'jointZOffset', label: 'Vertical start offset from bottom', type: 'range', min: 0, max: 25, step: 0.5, default: 3.5, unit: 'mm' },
+          { key: 'stopLedge', label: 'Top/Bottom mechanical stopper', type: 'check', default: true },
+          { key: 'snapHookLip', label: 'Snap-fit hook catch overhang', type: 'range', min: 0.4, max: 2.5, step: 0.1, default: 1.1, unit: 'mm' },
+          { key: 'snapBeamThick', label: 'Cantilever beam thickness', type: 'range', min: 0.8, max: 3.0, step: 0.1, default: 1.4, unit: 'mm' },
+          { key: 'snapSlotGap', label: 'Flex relief slot width', type: 'range', min: 0.8, max: 4.0, step: 0.1, default: 1.6, unit: 'mm' }
+        ]
+      },
+      {
+        id: 'magnetic',
+        title: '4. Magnetic Pocket Settings',
+        open: false,
+        params: [
+          { key: 'magDiameter', label: 'Magnet diameter (e.g. 6mm, 8mm)', type: 'range', min: 3, max: 20, step: 0.5, default: 6.0, unit: 'mm' },
+          { key: 'magThickness', label: 'Magnet thickness (e.g. 2mm, 3mm)', type: 'range', min: 1, max: 6, step: 0.5, default: 2.0, unit: 'mm' },
+          { key: 'magInsertStyle', label: 'Magnet insertion type', type: 'select', options: ['press-fit-side', 'top-drop-slot', 'embedded-pause'], default: 'top-drop-slot' },
+          { key: 'magWallSkin', label: 'Thin wall over magnet', type: 'range', min: 0.4, max: 1.6, step: 0.1, default: 0.6, unit: 'mm' },
+          { key: 'magRows', label: 'Magnet vertical pairs per side', type: 'range', min: 1, max: 3, step: 1, default: 2 }
+        ]
+      },
+      {
+        id: 'dfam',
+        title: '5. 3D Printability & Tolerances (DfAM)',
+        open: true,
+        params: [
+          { key: 'clearance', label: 'XY Interlock clearance (gap)', type: 'range', min: 0.05, max: 0.60, step: 0.01, default: 0.20, unit: 'mm' },
+          { key: 'zClearance', label: 'Vertical Z clearance', type: 'range', min: 0.05, max: 0.60, step: 0.02, default: 0.24, unit: 'mm' },
+          { key: 'filamentPreset', label: 'Filament calibration guide', type: 'select', options: ['PLA (Stiff)', 'PETG (Recommended for Snap)', 'ABS / ASA', 'TPU (Flex)'], default: 'PLA (Stiff)' },
+          { key: 'elephantChamfer', label: 'Bottom elephant-foot chamfer', type: 'range', min: 0, max: 3.0, step: 0.1, default: 0.8, unit: 'mm' },
+          { key: 'overhangAngle', label: 'Support-free taper angle', type: 'range', min: 35, max: 60, step: 1, default: 45, unit: '°' },
+          { key: 'leadInChamfer', label: 'Sliding lead-in bevel', type: 'range', min: 0, max: 3.0, step: 0.1, default: 1.0, unit: 'mm' },
+          { key: 'cornerRelief', label: 'Inside corner dogbone relief', type: 'check', default: true }
+        ]
+      },
+      {
+        id: 'compartment',
+        title: '6. Vertical Stacking & Interior',
+        open: false,
+        params: [
+          { key: 'stackableLip', label: 'Top/Bottom vertical stacking rim', type: 'check', default: true },
+          { key: 'stackLipHeight', label: 'Stacking rim height', type: 'range', min: 1.5, max: 8, step: 0.2, default: 3.0, unit: 'mm' },
+          { key: 'innerFillet', label: 'Bottom interior scoop fillet', type: 'range', min: 0, max: 12, step: 0.5, default: 2.5, unit: 'mm' },
+          { key: 'dividersX', label: 'Internal X dividers', type: 'range', min: 0, max: 5, step: 1, default: 0 },
+          { key: 'dividersY', label: 'Internal Z / Radial dividers', type: 'range', min: 0, max: 6, step: 1, default: 0 },
+          { key: 'dividerHeight', label: 'Divider height fraction', type: 'range', min: 0.2, max: 1.0, step: 0.05, default: 0.85 },
+          { key: 'labelLedge', label: 'Front label / finger tab', type: 'check', default: false },
+          { key: 'frontCutout', label: 'Front scoop cutout (bin style)', type: 'range', min: 0, max: 0.7, step: 0.05, default: 0 }
+        ]
+      },
+      {
+        id: 'viewmesh',
+        title: '7. Assembly Simulation & Mesh Quality',
+        open: false,
+        params: [
+          { key: 'assemblyMode', label: 'Tessellation preview', type: 'select', options: ['single', 'pair-1x2', 'cluster-3', 'grid-2x2', 'vertical-stack'], default: 'pair-1x2' },
+          { key: 'slideEngage', label: 'Slide / lock engagement', type: 'range', min: 0, max: 100, step: 1, default: 85, unit: '%' },
+          { key: 'exportTarget', label: 'What to export', type: 'select', options: ['single-unit', 'full-assembly', 'dogbone-clip-only'], default: 'single-unit' },
+          { key: 'curveSegs', label: 'Contour sampling density', type: 'range', min: 24, max: 128, step: 4, default: 64 },
+          { key: 'heightSegs', label: 'Vertical Z segments', type: 'range', min: 20, max: 120, step: 4, default: 56 }
+        ]
+      },
+      {
+        id: 'visual',
+        title: '8. Color, Material & Scene',
+        open: false,
+        params: [
+          { key: 'colorPrimary', label: 'Primary unit color', type: 'color', default: '#3a90b8' },
+          { key: 'colorJoint', label: 'Highlight joint faces', type: 'check', default: true },
+          { key: 'colorMale', label: 'Male connector tint (Outward)', type: 'color', default: '#e07a3a' },
+          { key: 'colorFemale', label: 'Female socket tint (Inward)', type: 'color', default: '#1d5c7a' },
+          { key: 'ghostOpacity', label: 'Neighbor unit opacity', type: 'range', min: 0.15, max: 1.0, step: 0.05, default: 0.45 },
+          { key: 'roughness', label: 'Surface roughness', type: 'range', min: 0, max: 1, step: 0.01, default: 0.42 },
+          { key: 'metalness', label: 'Metalness', type: 'range', min: 0, max: 1, step: 0.01, default: 0.05 },
+          { key: 'clearcoat', label: 'Satin sheen', type: 'range', min: 0, max: 1, step: 0.01, default: 0.15 },
+          { key: 'flatShading', label: 'Flat CAD shading', type: 'check', default: false },
+          { key: 'wireframe', label: 'Wireframe overlay', type: 'check', default: false },
+          { key: 'autoRotate', label: 'Auto-rotate turntable', type: 'check', default: false },
+          { key: 'showGrid', label: 'Show build-plate grid', type: 'check', default: true }
+        ]
+      }
+    ];
+
+    // ============================================================================
+    // 2. BUILT-IN ENGINEERING PRESETS
+    // ============================================================================
+    const PRESETS = {
+      'Hex Honeycomb Dovetail (Default)': {
+        baseShape: 'hexagon', outerWidth: 72, height: 55, cornerRadius: 3.5, wallThickness: 2.6,
+        jointType: 'dovetail', polarityMode: 'hermaphroditic', hermSplit: 'side-by-side', hermSpacing: 15,
+        jointDepth: 3.4, jointWidth: 6.4, dovetailAngle: 42, stopLedge: true, assemblyMode: 'cluster-3',
+        colorPrimary: '#d9a35b', colorMale: '#e0603a', colorFemale: '#2a7da8'
+      },
+      'Grid Box Organizer (Snap-Fit)': {
+        baseShape: 'box', outerWidth: 75, outerDepth: 75, height: 50, cornerRadius: 4, wallThickness: 2.6,
+        jointType: 'snap-cantilever', polarityMode: 'hermaphroditic', hermSpacing: 22,
+        jointDepth: 3.8, jointWidth: 8.0, snapHookLip: 1.1, snapBeamThick: 1.4, snapSlotGap: 1.6,
+        filamentPreset: 'PETG (Recommended for Snap)', stackableLip: true, assemblyMode: 'pair-1x2',
+        colorPrimary: '#3a90b8'
+      },
+      'Puzzle Tray Divider (Multi-Compartment)': {
+        baseShape: 'box', outerWidth: 82, outerDepth: 82, height: 38, cornerRadius: 4, wallThickness: 2.8,
+        jointType: 'puzzle', polarityMode: 'hermaphroditic', hermSpacing: 24,
+        jointDepth: 4.2, jointWidth: 7.5, dividersX: 1, dividersY: 0, assemblyMode: 'pair-1x2',
+        colorPrimary: '#3a90b8', colorMale: '#e07a3a', colorFemale: '#1b5775'
+      },
+      'Magnetic Desk Cup (Round Collar)': {
+        baseShape: 'circle-collar', outerWidth: 76, height: 80, wallThickness: 2.6,
+        jointType: 'magnetic', polarityMode: 'hermaphroditic', hermSpacing: 14,
+        magDiameter: 6.0, magThickness: 2.0, magInsertStyle: 'top-drop-slot', assemblyMode: 'cluster-3',
+        colorPrimary: '#52657a'
+      },
+      'Heavy-Duty Hardware Bin (T-Slot)': {
+        baseShape: 'box', outerWidth: 80, outerDepth: 95, height: 65, wallThickness: 3.0,
+        jointType: 't-slot', polarityMode: 'hermaphroditic', activeSides: 'all', hermSpacing: 22,
+        jointDepth: 3.8, jointWidth: 7.6, labelLedge: true, frontCutout: 0.45, assemblyMode: 'pair-1x2',
+        colorPrimary: '#c97a3e'
+      },
+      'Octa-Tessellation Module': {
+        baseShape: 'octagon', outerWidth: 84, height: 50, cornerRadius: 3, wallThickness: 2.6,
+        jointType: 'dovetail', polarityMode: 'hermaphroditic', hermSpacing: 13,
+        jointDepth: 3.0, jointWidth: 5.4, dovetailAngle: 45, assemblyMode: 'pair-1x2',
+        colorPrimary: '#4d9078'
+      },
+      'Wall Honeycomb Shelf': {
+        baseShape: 'hexagon', outerWidth: 140, height: 45, cornerRadius: 4, wallThickness: 3.2,
+        jointType: 'dovetail', polarityMode: 'hermaphroditic', hermSpacing: 32,
+        jointDepth: 4.5, jointWidth: 10.0, dovetailAngle: 45, stackableLip: false, assemblyMode: 'cluster-3',
+        colorPrimary: '#d9a35b'
+      }
+    };
+
+    // State initialization
+    const STATE = {};
+    SCHEMA.forEach(g => g.params.forEach(p => { STATE[p.key] = p.default; }));
+
+    // ============================================================================
+    // 3. THREE.JS SCENE & VIEWPORT INITIALIZATION
+    // ============================================================================
+    const canvas = document.getElementById('three-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.localClippingEnabled = true;
+
+    const scene = new THREE.Scene();
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 1, 2500);
+    camera.position.set(135, 125, 155);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 25, 0);
+
+    // Lighting
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.35);
+    dirLight1.position.set(120, 220, 140);
+    dirLight1.castShadow = true;
+    dirLight1.shadow.mapSize.set(2048, 2048);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0x90b8e0, 0.55);
+    dirLight2.position.set(-140, 100, -110);
+    scene.add(dirLight2);
+
+    // Build Plate Grid
+    const gridHelper = new THREE.GridHelper(320, 32, 0xd9a35b, 0x2c3540);
+    gridHelper.position.y = -0.05;
+    scene.add(gridHelper);
+
+    const rootGroup = new THREE.Group();
+    scene.add(rootGroup);
+
+    // Section Clipping Planes
+    let sectionMode = 'none'; // 'none' | 'y' | 'x'
+    let sectionFrac = 0.5;
+    const clipPlaneY = new THREE.Plane(new THREE.Vector3(0, -1, 0), 30);
+    const clipPlaneX = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+
+    // ============================================================================
+    // 4. PROCEDURAL TRUE-UNDERCUT 2D CONTOUR & 3D WATERTIGHT MESH ENGINE
+    // ============================================================================
+
+    /**
+     * Generates a single local connector feature profile along wall tangent coordinate `u`
+     * and outward normal offset `n` (where n > 0 is STRICTLY OUTWARD from the outer wall,
+     * and n < 0 is STRICTLY INWARD into the outer wall).
+     *
+     * Because dovetails, T-slots, puzzle lobes, and snap hooks have UNDERCUTS (wider head than neck),
+     * we construct a multi-point parametric curve `(u(t), n(t))` for `t in [-1, 1]`.
+     */
+    function sampleConnectorFeature(t, isMale, yNorm, yMm, p) {
+      const type = p.jointType;
+      if (type === 'none' || yNorm <= 0.001) {
+        return { u: t * (p.jointWidth * 0.5), n: 0, role: 0 };
+      }
+
+      const clr = p.clearance;
+      // Male gets reduced by clearance/2; Female gets enlarged by clearance/2
+      const eps = isMale ? -clr * 0.5 : +clr * 0.5;
+      const sign = isMale ? +1 : -1; // +1 = Outward protrusion, -1 = Inward socket recess
+
+      const depthBase = Math.max(1.2, p.jointDepth + eps) * yNorm;
+      const neckW = Math.max(2.4, p.jointWidth + 2 * eps);
+
+      // Inside corner relief (dogbone ear) for female sockets so sharp male corners never bind
+      const relief = (!isMale && p.cornerRelief) ? 0.18 * yNorm : 0;
+
+      if (type === 'dovetail') {
+        const rad = (p.dovetailAngle * Math.PI) / 180;
+        const flare = depthBase / Math.tan(rad);
+        const headW = neckW + 2 * flare * yNorm;
+
+        // Parameterize 5-segment path across t in [-1, 1]:
+        // [-1, -0.35]: left undercut flank from neckW/2 outward/inward to headW/2
+        // [-0.35, +0.35]: flat outer/inner crest at depthBase
+        // [+0.35, +1]: right undercut flank from headW/2 back to neckW/2
+        const absT = Math.abs(t);
+        const sgnT = t < 0 ? -1 : 1;
+        if (absT > 0.38) {
+          const k = (1.0 - absT) / 0.62; // 0 at wall surface (neck), 1 at crest (head)
+          const uVal = sgnT * (0.5 * neckW + k * (0.5 * (headW - neckW)));
+          const nVal = sign * (k * depthBase + (k > 0.85 ? relief : 0));
+          return { u: uVal, n: nVal, role: sign };
+        } else {
+          const k = absT / 0.38;
+          const uVal = sgnT * k * (0.5 * headW);
+          const nVal = sign * (depthBase + (k > 0.8 ? relief : 0));
+          return { u: uVal, n: nVal, role: sign };
+        }
+      }
+
+      if (type === 'puzzle') {
+        // Circular interlocking puzzle lobe with narrow neck and round bulbous head
+        // Angle phi sweeps from -0.82*PI to +0.82*PI so the neck narrows before ballooning out
+        const phi = t * 0.82 * Math.PI;
+        const lobeR = 0.56 * neckW + 0.32 * depthBase;
+        const centerOffset = depthBase - lobeR * 0.72;
+        const uCircle = Math.sin(phi) * lobeR;
+        const nCircle = centerOffset + Math.cos(phi) * lobeR;
+        const nClamped = Math.max(0, nCircle);
+        return {
+          u: uCircle,
+          n: sign * nClamped,
+          role: sign
+        };
+      }
+
+      if (type === 't-slot') {
+        // Orthogonal T-Slot: narrow stem (0.52 * headW) stepping out to wide T-crossbar
+        const stemW = Math.max(2.2, neckW * 0.62);
+        const barW = neckW * 1.38;
+        const stemDepth = depthBase * 0.48;
+        const absT = Math.abs(t);
+        const sgnT = t < 0 ? -1 : 1;
+
+        if (absT > 0.68) {
+          // Stem transition from wall surface (0) to stemDepth
+          const k = (1.0 - absT) / 0.32;
+          return { u: sgnT * 0.5 * stemW, n: sign * (k * stemDepth), role: sign };
+        } else if (absT > 0.36) {
+          // Undercut shelf stepping out from stemW to barW with 45-deg printability chamfer
+          const k = (0.68 - absT) / 0.32;
+          const uVal = sgnT * (0.5 * stemW + k * 0.5 * (barW - stemW));
+          const nVal = sign * (stemDepth + k * (depthBase - stemDepth) * 0.35);
+          return { u: uVal, n: nVal, role: sign };
+        } else {
+          // Outer T-head cap
+          const k = absT / 0.36;
+          return { u: sgnT * k * 0.5 * barW, n: sign * depthBase, role: sign };
+        }
+      }
+
+      if (type === 'snap-cantilever') {
+        // Twin cantilever snap arms with center flex relief gap (for Male) or catch socket (for Female)
+        const hookLip = p.snapHookLip * yNorm;
+        const headW = neckW + 2 * hookLip;
+        const absT = Math.abs(t);
+        const sgnT = t < 0 ? -1 : 1;
+
+        if (isMale) {
+          // Center slot relief between twin cantilever beams
+          const gapHalf = Math.min(neckW * 0.28, p.snapSlotGap * 0.5);
+          if (absT < 0.18) {
+            // Deep flex relief slot in the center of the male snap clip
+            return { u: sgnT * gapHalf, n: depthBase * 0.15, role: 1 };
+          } else if (absT < 0.52) {
+            // Insertion bevel ramp at the tip of the hooks
+            const k = (absT - 0.18) / 0.34;
+            return { u: sgnT * (gapHalf + k * (0.5 * headW - gapHalf)), n: depthBase * (0.82 + 0.18 * (1 - k)), role: 1 };
+          } else {
+            // Hook catch undercut returning to beam neck
+            const k = (1.0 - absT) / 0.48;
+            const uVal = sgnT * (0.5 * neckW + (k > 0.65 ? (k - 0.65) / 0.35 * hookLip : 0));
+            return { u: uVal, n: k * depthBase, role: 1 };
+          }
+        } else {
+          // Female catch socket (undercut cavity inside outer wall)
+          if (absT > 0.45) {
+            const k = (1.0 - absT) / 0.55;
+            const uVal = sgnT * (0.5 * neckW + (k > 0.5 ? (k - 0.5) * 2 * hookLip : 0));
+            return { u: uVal, n: -k * depthBase, role: -1 };
+          } else {
+            const k = absT / 0.45;
+            return { u: sgnT * k * 0.5 * headW, n: -depthBase, role: -1 };
+          }
+        }
+      }
+
+      if (type === 'magnetic') {
+        // Flush outer wall with subtle registration detent + internal boss pocket
+        const detent = 0.45 * yNorm;
+        const uVal = t * 0.5 * p.magDiameter;
+        const nVal = sign * detent * Math.cos(t * Math.PI * 0.5);
+        return { u: uVal, n: nVal, role: sign };
+      }
+
+      return { u: t * 0.5 * neckW, n: 0, role: 0 };
+    }
+
+    /**
+     * Computes the vertical engagement envelope yNorm in [0, 1] at height yMm
+     * incorporating support-free 45° overhang tapers, mechanical stop ledges, and lead-in bevels.
+     */
+    function getJointVerticalEnvelope(yMm, isMale, p) {
+      if (p.jointType === 'none') return 0;
+      const H = p.height;
+      const spanH = H * p.jointHeightFrac;
+      const yStart = p.jointZOffset;
+      const yEnd = Math.min(H - (p.stackableLip ? p.stackLipHeight + 0.8 : 1.0), yStart + spanH);
+
+      if (yMm < yStart || yMm > yEnd) return 0;
+
+      const taperSlope = Math.tan((p.overhangAngle * Math.PI) / 180);
+      const taperH = Math.max(1.5, p.jointDepth / taperSlope);
+
+      let env = 1.0;
+
+      // Bottom support-free ramp for Male protrusions
+      if (isMale && yMm < yStart + taperH) {
+        env = Math.min(env, (yMm - yStart) / taperH);
+      }
+
+      // Mechanical stopper ledge: Female stops near bottom or Male stops near top
+      if (p.stopLedge) {
+        if (!isMale && yMm < yStart + taperH) {
+          env = Math.min(env, (yMm - yStart) / taperH);
+        }
+        if (isMale && yMm > yEnd - p.leadInChamfer * 1.5 && p.leadInChamfer > 0) {
+          env = Math.min(env, (yEnd - yMm) / (p.leadInChamfer * 1.5));
+        }
+      }
+
+      // Snap-fit and Magnetic pockets are vertically bounded inside the wall middle
+      if (p.jointType === 'snap-cantilever' || p.jointType === 'magnetic') {
+        const mid = 0.5 * (yStart + yEnd);
+        const halfSpan = 0.35 * (yEnd - yStart);
+        const dist = Math.abs(yMm - mid);
+        if (dist > halfSpan) return 0;
+        if (dist > halfSpan - taperH) {
+          env = Math.min(env, (halfSpan - dist) / taperH);
+        }
+      }
+
+      return Math.max(0, Math.min(1, env));
+    }
+
+    /**
+     * Determines whether side `sideIdx` out of `numSides` has active connectors.
+     */
+    function isSideActive(sideIdx, numSides, mode) {
+      if (mode === 'all') return true;
+      if (mode === 'front-only') return sideIdx === 0;
+      if (mode === 'opposite-2') return sideIdx === 0 || sideIdx === Math.floor(numSides / 2);
+      if (mode === 'adjacent-2') return sideIdx === 0 || sideIdx === 1;
+      if (mode === 'custom-step') return sideIdx % 2 === 0;
+      return true;
+    }
+
+    /**
+     * Generates the list of connector features along a single flat wall of length `sideLen`.
+     * Returns sorted descriptors `{ centerS, halfSpan, isMale }`.
+     */
+    function getWallConnectors(sideIdx, numSides, sideLen, yMm, p) {
+      if (p.jointType === 'none' || !isSideActive(sideIdx, numSides, p.activeSides)) return [];
+
+      const list = [];
+      const count = p.jointsPerSide;
+      const baseFootprint = Math.max(p.jointWidth * 1.35, p.jointWidth + 2 * p.jointDepth + 2);
+      const halfSpan = baseFootprint * 0.5;
+
+      const usableLen = Math.max(10, sideLen - 2 * p.cornerRadius - 4);
+
+      if (p.polarityMode === 'hermaphroditic') {
+        if (p.hermSplit === 'side-by-side') {
+          // Pair of Male (-offset) and Female (+offset) centered on the wall
+          // When an identical unit is rotated 180 deg around Y and placed opposite this wall,
+          // its local tangent coordinate s flips sign, so its Male (+offset in world) locks into our Female (+offset)!
+          const pairOffset = Math.min(usableLen * 0.32, p.hermSpacing * 0.5);
+          list.push({ centerS: -pairOffset, halfSpan: Math.min(halfSpan, pairOffset * 0.88), isMale: true });
+          list.push({ centerS: +pairOffset, halfSpan: Math.min(halfSpan, pairOffset * 0.88), isMale: false });
+        } else {
+          // Top-Bottom Hermaphroditic split
+          const midY = p.height * 0.5;
+          const isUpper = yMm >= midY;
+          list.push({ centerS: 0, halfSpan, isMale: isUpper });
+        }
+      } else if (p.polarityMode === 'alternating') {
+        const isMaleSide = (sideIdx % 2 === 0);
+        for (let i = 0; i < count; i++) {
+          const frac = count === 1 ? 0 : (i / (count - 1) - 0.5) * 0.65;
+          list.push({ centerS: frac * usableLen, halfSpan, isMale: isMaleSide });
+        }
+      } else if (p.polarityMode === 'all-female-clip') {
+        for (let i = 0; i < count; i++) {
+          const frac = count === 1 ? 0 : (i / (count - 1) - 0.5) * 0.65;
+          list.push({ centerS: frac * usableLen, halfSpan, isMale: false });
+        }
+      }
+
+      list.sort((a, b) => a.centerS - b.centerS);
+      return list;
+    }
+
+    /**
+     * Computes polygon vertices in Counter-Clockwise (CCW) order on the XZ plane
+     * so that every wall's outward normal points strictly AWAY from the origin (0,0).
+     */
+    function getBasePolygonWalls(p) {
+      const W = p.outerWidth;
+      const D = p.baseShape === 'box' ? p.outerDepth : W;
+      let N = 6;
+      if (p.baseShape === 'box') N = 4;
+      else if (p.baseShape === 'hexagon') N = 6;
+      else if (p.baseShape === 'octagon') N = 8;
+      else if (p.baseShape === 'triangle') N = 3;
+      else if (p.baseShape === 'circle-collar') N = 6;
+      else if (p.baseShape === 'multigon') N = p.polySides;
+
+      const corners = [];
+      if (p.baseShape === 'box') {
+        const hw = W * 0.5;
+        const hd = D * 0.5;
+        // Ordered so wall 0 is Front (+Z), wall 1 is Right (+X), wall 2 is Back (-Z), wall 3 is Left (-X)
+        corners.push(
+          { x: -hw, z: +hd },
+          { x: +hw, z: +hd },
+          { x: +hw, z: -hd },
+          { x: -hw, z: -hd }
+        );
+      } else {
+        const apothem = W * 0.5;
+        const circumR = apothem / Math.cos(Math.PI / N);
+        for (let k = 0; k < N; k++) {
+          // Start angle so side 0 is flat along +Z or +X
+          const ang = ((k - 0.5) * 2 * Math.PI) / N;
+          corners.push({
+            x: circumR * Math.sin(ang),
+            z: circumR * Math.cos(ang)
+          });
+        }
+      }
+
+      const walls = [];
+      for (let k = 0; k < N; k++) {
+        const p0 = corners[k];
+        const p1 = corners[(k + 1) % N];
+        const mx = 0.5 * (p0.x + p1.x);
+        const mz = 0.5 * (p0.z + p1.z);
+        const dx = p1.x - p0.x;
+        const dz = p1.z - p0.z;
+        const len = Math.hypot(dx, dz);
+
+        // Tangent along wall from p0 to p1
+        const tx = dx / len;
+        const tz = dz / len;
+
+        // Outward normal pointing strictly away from center (0,0)
+        const mLen = Math.hypot(mx, mz) || 1;
+        let nx = mx / mLen;
+        let nz = mz / mLen;
+        // Project perpendicular to tangent and ensure dot(n, midpoint) > 0
+        let perpX = tz;
+        let perpZ = -tx;
+        if (perpX * mx + perpZ * mz < 0) {
+          perpX = -perpX;
+          perpZ = -perpZ;
+        }
+        nx = perpX;
+        nz = perpZ;
+
+        walls.push({ p0, p1, mx, mz, tx, tz, nx, nz, len, index: k, total: N });
+      }
+      return walls;
+    }
+
+    /**
+     * Evaluates a complete closed 2D ring of `totalPoints` vertices at vertical height `yMm`.
+     * Returns both `outerRing` and `innerRing` with exact undercut coordinates and vertex color roles.
+     */
+    function evaluateSliceRings(walls, yMm, totalPoints, p) {
+      const H = p.height;
+      const N = walls.length;
+      const ptsPerWall = Math.max(24, Math.floor(totalPoints / N));
+
+      // DfAM Bottom Elephant's Foot Chamfer (pulls outer contour slightly inward near y=0)
+      let elephantOffset = 0;
+      if (p.elephantChamfer > 0 && yMm < p.elephantChamfer) {
+        elephantOffset = -(p.elephantChamfer - yMm);
+      }
+
+      // Vertical Stacking Rim offsets
+      let outerStackOffset = 0;
+      let innerStackOffset = 0;
+      if (p.stackableLip) {
+        const lipH = p.stackLipHeight;
+        const stepDepth = p.wallThickness * 0.45;
+        if (yMm < lipH) {
+          // Bottom outer recessed step so container sits inside lower unit's top rim
+          outerStackOffset = -stepDepth - p.clearance * 0.5;
+        } else if (yMm < lipH + stepDepth) {
+          // 45° support-free transition ramp
+          const k = 1.0 - (yMm - lipH) / stepDepth;
+          outerStackOffset = -k * (stepDepth + p.clearance * 0.5);
+        }
+        if (yMm > H - lipH) {
+          // Top inner recessed step creating an upward stacking tongue
+          const k = (yMm - (H - lipH)) / lipH;
+          outerStackOffset = -stepDepth * 0.15 * k;
+          innerStackOffset = -stepDepth * Math.min(1, k * 1.4);
+        }
+      }
+
+      // Interior bottom scoop fillet
+      let scoopOffset = 0;
+      const floorY = p.baseThickness;
+      if (p.innerFillet > 0 && yMm > floorY && yMm < floorY + p.innerFillet) {
+        const dy = p.innerFillet - (yMm - floorY);
+        scoopOffset = p.innerFillet - Math.sqrt(Math.max(0, p.innerFillet * p.innerFillet - dy * dy));
+      }
+
+      const outerRing = [];
+      const innerRing = [];
+
+      for (let wIdx = 0; wIdx < N; wIdx++) {
+        const w = walls[wIdx];
+        const halfL = w.len * 0.5;
+        const cornerR = Math.min(p.cornerRadius, halfL * 0.35);
+        const conns = getWallConnectors(wIdx, N, w.len, yMm, p);
+
+        for (let i = 0; i < ptsPerWall; i++) {
+          const uFrac = i / ptsPerWall; // [0, 1) along wall
+          const s = (uFrac - 0.5) * w.len; // [-L/2, +L/2)
+
+          let localS = s;
+          let localN = 0;
+          let role = 0; // 0 = body, +1 = Male (outward), -1 = Female (inward socket)
+
+          // Check if `s` falls inside any connector window on this wall
+          for (let c = 0; c < conns.length; c++) {
+            const conn = conns[c];
+            const ds = s - conn.centerS;
+            if (Math.abs(ds) <= conn.halfSpan) {
+              const tLocal = ds / conn.halfSpan; // [-1, 1]
+              const yNorm = getJointVerticalEnvelope(yMm, conn.isMale, p);
+              const feat = sampleConnectorFeature(tLocal, conn.isMale, yNorm, yMm, p);
+              localS = conn.centerS + feat.u;
+              localN = feat.n;
+              role = feat.role;
+              break;
+            }
+          }
+
+          // Corner Fillet rounding near ends of wall
+          let cornerInward = 0;
+          const distFromEnd = halfL - Math.abs(localS);
+          if (distFromEnd < cornerR && cornerR > 0.1) {
+            const dx = cornerR - distFromEnd;
+            cornerInward = -(cornerR - Math.sqrt(Math.max(0, cornerR * cornerR - dx * dx))) * 0.55;
+          }
+
+          // Front label ledge on wall 0 near top
+          let ledgeOut = 0;
+          if (p.labelLedge && wIdx === 0 && yMm > H * 0.72 && Math.abs(localS) < halfL * 0.45) {
+            const kLedge = (yMm - H * 0.72) / (H * 0.28);
+            ledgeOut = kLedge * 5.0;
+          }
+
+          // Circle-collar mode curves the wall between flat connector pads
+          let collarOffset = 0;
+          if (p.baseShape === 'circle-collar' && role === 0) {
+            const R = p.outerWidth * 0.5;
+            const rWall = Math.hypot(w.mx + w.tx * localS, w.mz + w.tz * localS);
+            collarOffset = (R - rWall) * 0.85;
+          }
+
+          // Total outward normal position for Outer Wall
+          const nOut = localN + elephantOffset + outerStackOffset + cornerInward + ledgeOut + collarOffset;
+
+          const ox = w.mx + w.tx * localS + w.nx * nOut;
+          const oz = w.mz + w.tz * localS + w.nz * nOut;
+
+          // Inner Wall position:
+          // - Under a Male outward protrusion (localN > 0), inner wall stays flat (does not waste interior space).
+          // - Under a Female inward socket (localN < 0), inner wall embosses inward by localN so wall never punctures!
+          const femaleInwardBoss = Math.min(0, localN);
+          const magBoss = (p.jointType === 'magnetic' && role !== 0)
+            ? -(p.magThickness + p.magWallSkin) * getJointVerticalEnvelope(yMm, true, p)
+            : 0;
+
+          const nIn = -p.wallThickness + femaleInwardBoss + magBoss - scoopOffset + innerStackOffset + cornerInward + collarOffset;
+          const ix = w.mx + w.tx * localS + w.nx * nIn;
+          const iz = w.mz + w.tz * localS + w.nz * nIn;
+
+          outerRing.push({ x: ox, y: yMm, z: oz, role, wallIdx: wIdx, s: localS });
+          innerRing.push({ x: ix, y: yMm, z: iz, role, wallIdx: wIdx, s: localS });
+        }
+      }
+
+      return { outerRing, innerRing };
+    }
+
+    /**
+     * Builds the complete watertight THREE.BufferGeometry with vertex colors
+     * (Body color, Outward Male tint, Inward Female socket tint).
+     */
+    function buildContainerGeometry(p) {
+      const walls = getBasePolygonWalls(p);
+      const H = p.height;
+      const floorY = Math.min(H - 2, p.baseThickness);
+      const zSegs = p.heightSegs;
+      const ringPts = walls.length * Math.max(28, Math.round(p.curveSegs * 0.65));
+
+      const colBody = new THREE.Color(p.colorPrimary);
+      const colMale = new THREE.Color(p.colorMale);
+      const colFemale = new THREE.Color(p.colorFemale);
+
+      const positions = [];
+      const colors = [];
+
+      function pushVertex(pt, overrideRole = null) {
+        positions.push(pt.x, pt.y, pt.z);
+        const r = overrideRole !== null ? overrideRole : pt.role;
+        if (!p.colorJoint || r === 0) {
+          colors.push(colBody.r, colBody.g, colBody.b);
+        } else if (r > 0) {
+          colors.push(colMale.r, colMale.g, colMale.b);
+        } else {
+          colors.push(colFemale.r, colFemale.g, colFemale.b);
+        }
+      }
+
+      function pushQuad(a, b, c, d, roleOverride = null) {
+        pushVertex(a, roleOverride);
+        pushVertex(b, roleOverride);
+        pushVertex(c, roleOverride);
+
+        pushVertex(a, roleOverride);
+        pushVertex(c, roleOverride);
+        pushVertex(d, roleOverride);
+      }
+
+      function pushTri(a, b, c, roleOverride = 0) {
+        pushVertex(a, roleOverride);
+        pushVertex(b, roleOverride);
+        pushVertex(c, roleOverride);
+      }
+
+      // Sample vertical Z/Y slices from y=0 to y=H
+      const slices = [];
+      for (let j = 0; j <= zSegs; j++) {
+        const yMm = (j / zSegs) * H;
+        slices.push(evaluateSliceRings(walls, yMm, ringPts, p));
+      }
+
+      const M = slices[0].outerRing.length;
+
+      // 1. Outer Wall Surface (j from 0 to zSegs - 1)
+      for (let j = 0; j < zSegs; j++) {
+        const r0 = slices[j].outerRing;
+        const r1 = slices[j + 1].outerRing;
+        for (let i = 0; i < M; i++) {
+          const iNext = (i + 1) % M;
+          pushQuad(r0[i], r0[iNext], r1[iNext], r1[i]);
+        }
+      }
+
+      // 2. Inner Cavity Wall Surface (from floor slice to top slice)
+      const floorSliceIdx = Math.max(1, Math.round((floorY / H) * zSegs));
+      for (let j = floorSliceIdx; j < zSegs; j++) {
+        const r0 = slices[j].innerRing;
+        const r1 = slices[j + 1].innerRing;
+        for (let i = 0; i < M; i++) {
+          const iNext = (i + 1) % M;
+          // Reversed winding so normals face inward into the cavity
+          pushQuad(r0[iNext], r0[i], r1[i], r1[iNext]);
+        }
+      }
+
+      // 3. Top Rim Cap (bridging outerRing and innerRing at j = zSegs)
+      const topOut = slices[zSegs].outerRing;
+      const topIn = slices[zSegs].innerRing;
+      for (let i = 0; i < M; i++) {
+        const iNext = (i + 1) % M;
+        pushQuad(topOut[i], topOut[iNext], topIn[iNext], topIn[i]);
+      }
+
+      // 4. Exterior Bottom Floor Cap at y = 0
+      const botOut = slices[0].outerRing;
+      const centerBot = { x: 0, y: 0, z: 0, role: 0 };
+      for (let i = 0; i < M; i++) {
+        const iNext = (i + 1) % M;
+        pushTri(centerBot, botOut[iNext], botOut[i], 0);
+      }
+
+      // 5. Interior Floor Cap at y = floorY
+      const floorIn = slices[floorSliceIdx].innerRing;
+      const centerFloor = { x: 0, y: slices[floorSliceIdx].innerRing[0].y, z: 0, role: 0 };
+      for (let i = 0; i < M; i++) {
+        const iNext = (i + 1) % M;
+        pushTri(centerFloor, floorIn[i], floorIn[iNext], 0);
+      }
+
+      // 6. Optional Internal Compartment Dividers (dividersX, dividersY)
+      const divH = floorY + (H - floorY) * p.dividerHeight;
+      const divThick = Math.max(1.4, p.wallThickness * 0.75);
+      const innerSpanX = p.outerWidth - 2 * p.wallThickness - 1.5;
+      const innerSpanZ = (p.baseShape === 'box' ? p.outerDepth : p.outerWidth) - 2 * p.wallThickness - 1.5;
+
+      function addBoxPartition(cx, cz, sx, sz, y0, y1) {
+        const hx = sx * 0.5, hz = sz * 0.5;
+        const v = [
+          { x: cx - hx, y: y0, z: cz + hz, role: 0 },
+          { x: cx + hx, y: y0, z: cz + hz, role: 0 },
+          { x: cx + hx, y: y0, z: cz - hz, role: 0 },
+          { x: cx - hx, y: y0, z: cz - hz, role: 0 },
+          { x: cx - hx, y: y1, z: cz + hz, role: 0 },
+          { x: cx + hx, y: y1, z: cz + hz, role: 0 },
+          { x: cx + hx, y: y1, z: cz - hz, role: 0 },
+          { x: cx - hx, y: y1, z: cz - hz, role: 0 }
+        ];
+        pushQuad(v[0], v[1], v[5], v[4], 0);
+        pushQuad(v[1], v[2], v[6], v[5], 0);
+        pushQuad(v[2], v[3], v[7], v[6], 0);
+        pushQuad(v[3], v[0], v[4], v[7], 0);
+        pushQuad(v[4], v[5], v[6], v[7], 0);
+      }
+
+      for (let dx = 1; dx <= p.dividersX; dx++) {
+        const xPos = ((dx / (p.dividersX + 1)) - 0.5) * innerSpanX;
+        addBoxPartition(xPos, 0, divThick, innerSpanZ * 0.92, floorY, divH);
+      }
+      for (let dz = 1; dz <= p.dividersY; dz++) {
+        const zPos = ((dz / (p.dividersY + 1)) - 0.5) * innerSpanZ;
+        addBoxPartition(0, zPos, innerSpanX * 0.92, divThick, floorY, divH);
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    /**
+     * Generates a standalone Double-Male Dogbone Clip for 'all-female-clip' mode.
+     */
+    function buildDogboneClipGeometry(p) {
+      const H = p.height * p.jointHeightFrac;
+      const pts = 80;
+      const ring = [];
+      for (let i = 0; i < pts; i++) {
+        const ang = (i / pts) * Math.PI * 2;
+        const t = Math.sin(ang);
+        const side = Math.cos(ang) >= 0 ? 1 : -1;
+        const feat = sampleConnectorFeature(t, true, 1.0, H * 0.5, p);
+        ring.push({ x: side * (feat.n + 0.8), z: feat.u });
+      }
+
+      const positions = [];
+      const colors = [];
+      const col = new THREE.Color(p.colorMale);
+
+      function addV(x, y, z) {
+        positions.push(x, y, z);
+        colors.push(col.r, col.g, col.b);
+      }
+
+      for (let i = 0; i < pts; i++) {
+        const next = (i + 1) % pts;
+        const a = ring[i], b = ring[next];
+        addV(a.x, 0, a.z); addV(b.x, 0, b.z); addV(b.x, H, b.z);
+        addV(a.x, 0, a.z); addV(b.x, H, b.z); addV(a.x, H, a.z);
+        addV(0, H, 0); addV(a.x, H, a.z); addV(b.x, H, b.z);
+        addV(0, 0, 0); addV(b.x, 0, b.z); addV(a.x, 0, a.z);
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    // ============================================================================
+    // 5. TESSELLATION ASSEMBLY & ENGAGEMENT SIMULATION
+    // ============================================================================
+    let currentUnitGeometry = null;
+
+    function updateScene() {
+      const t0 = performance.now();
+
+      while (rootGroup.children.length > 0) {
+        const ch = rootGroup.children.pop();
+        if (ch.geometry) ch.geometry.dispose();
+        if (ch.material) {
+          if (Array.isArray(ch.material)) ch.material.forEach(m => m.dispose());
+          else ch.material.dispose();
+        }
+      }
+
+      gridHelper.visible = STATE.showGrid;
+      controls.autoRotate = STATE.autoRotate;
+
+      const activeClips = [];
+      if (sectionMode === 'y') {
+        clipPlaneY.constant = (sectionFrac * STATE.height);
+        activeClips.push(clipPlaneY);
+      } else if (sectionMode === 'x') {
+        clipPlaneX.constant = (sectionFrac - 0.5) * STATE.outerWidth;
+        activeClips.push(clipPlaneX);
+      }
+
+      if (STATE.exportTarget === 'dogbone-clip-only') {
+        currentUnitGeometry = buildDogboneClipGeometry(STATE);
+      } else {
+        currentUnitGeometry = buildContainerGeometry(STATE);
+      }
+
+      const matPrimary = new THREE.MeshPhysicalMaterial({
+        vertexColors: true,
+        roughness: STATE.roughness,
+        metalness: STATE.metalness,
+        clearcoat: STATE.clearcoat,
+        flatShading: STATE.flatShading,
+        wireframe: STATE.wireframe,
+        side: THREE.DoubleSide,
+        clippingPlanes: activeClips
+      });
+
+      const primaryMesh = new THREE.Mesh(currentUnitGeometry, matPrimary);
+      primaryMesh.castShadow = true;
+      primaryMesh.receiveShadow = true;
+      rootGroup.add(primaryMesh);
+
+      // Compute exact tessellation neighbor transforms so Wall 0 of Neighbor meets Wall 0 of Primary
+      // rotated by 180° (Math.PI) so Hermaphroditic Male (-s) mates into Female (+s)
+      const walls = getBasePolygonWalls(STATE);
+      const w0 = walls[0];
+      const apothem0 = Math.hypot(w0.mx, w0.mz);
+      const pitchDist = apothem0 * 2.0;
+
+      // Slide / Lock Engagement offset
+      const slideFrac = (100 - STATE.slideEngage) / 100;
+      const isVerticalSlide = ['dovetail', 't-slot', 'puzzle'].includes(STATE.jointType);
+      const slideY = isVerticalSlide ? slideFrac * (STATE.height * 0.75) : 0;
+      const slideNormal = !isVerticalSlide ? slideFrac * (STATE.jointDepth * 2.4) : 0;
+
+      const matGhost = new THREE.MeshPhysicalMaterial({
+        vertexColors: true,
+        roughness: STATE.roughness,
+        metalness: STATE.metalness,
+        transparent: STATE.ghostOpacity < 0.99,
+        opacity: STATE.ghostOpacity,
+        flatShading: STATE.flatShading,
+        wireframe: STATE.wireframe,
+        side: THREE.DoubleSide,
+        clippingPlanes: activeClips
+      });
+
+      function addNeighborAcrossWall(wallIdx, extraY = 0) {
+        const w = walls[wallIdx % walls.length];
+        const dist = Math.hypot(w.mx, w.mz) * 2.0 + slideNormal;
+        const clone = new THREE.Mesh(currentUnitGeometry, matGhost);
+        clone.position.set(w.nx * dist, slideY + extraY, w.nz * dist);
+        // Rotate 180 deg so the opposing wall faces our wall with self-mating hermaphroditic alignment
+        clone.rotation.y = Math.PI;
+        rootGroup.add(clone);
+      }
+
+      if (STATE.exportTarget !== 'dogbone-clip-only') {
+        if (STATE.assemblyMode === 'pair-1x2') {
+          addNeighborAcrossWall(0);
+        } else if (STATE.assemblyMode === 'cluster-3') {
+          addNeighborAcrossWall(0);
+          addNeighborAcrossWall(1);
+        } else if (STATE.assemblyMode === 'grid-2x2') {
+          addNeighborAcrossWall(0);
+          addNeighborAcrossWall(1);
+          if (walls.length >= 4) {
+            const wA = walls[0], wB = walls[1];
+            const dA = Math.hypot(wA.mx, wA.mz) * 2.0 + slideNormal;
+            const dB = Math.hypot(wB.mx, wB.mz) * 2.0 + slideNormal;
+            const cloneDiag = new THREE.Mesh(currentUnitGeometry, matGhost);
+            cloneDiag.position.set(wA.nx * dA + wB.nx * dB, slideY, wA.nz * dA + wB.nz * dB);
+            rootGroup.add(cloneDiag);
+          }
+        } else if (STATE.assemblyMode === 'vertical-stack') {
+          const stackZ = STATE.height - (STATE.stackableLip ? STATE.stackLipHeight : 0) + slideFrac * 25;
+          const cloneTop = new THREE.Mesh(currentUnitGeometry, matGhost);
+          cloneTop.position.set(0, stackZ, 0);
+          rootGroup.add(cloneTop);
+        }
+      }
+
+      const elapsed = Math.round(performance.now() - t0);
+      updateEngineeringHUD(currentUnitGeometry, pitchDist, elapsed);
+    }
+
+    // ============================================================================
+    // 6. DFAM TELEMETRY & DIVERGENCE THEOREM VOLUME CALCULATOR
+    // ============================================================================
+    function computeMeshVolumeCm3(bufferGeo) {
+      const pos = bufferGeo.attributes.position.array;
+      let volMm3 = 0;
+      for (let i = 0; i < pos.length; i += 9) {
+        const ax = pos[i], ay = pos[i + 1], az = pos[i + 2];
+        const bx = pos[i + 3], by = pos[i + 4], bz = pos[i + 5];
+        const cx = pos[i + 6], cy = pos[i + 7], cz = pos[i + 8];
+        volMm3 += (ax * (by * cz - bz * cy) + bx * (cy * az - cz * ay) + cx * (ay * bz - az * by)) / 6.0;
+      }
+      return Math.abs(volMm3) / 1000.0;
+    }
+
+    function updateEngineeringHUD(geo, pitchMm, buildMs) {
+      document.getElementById('hud-buildtime').textContent = `${buildMs} ms`;
+      const D = STATE.baseShape === 'box' ? STATE.outerDepth : STATE.outerWidth;
+      document.getElementById('hud-dims').textContent = `${STATE.outerWidth.toFixed(1)}×${D.toFixed(1)}×${STATE.height.toFixed(1)} mm`;
+      document.getElementById('hud-pitch').textContent = `${pitchMm.toFixed(2)} mm (Clr ${STATE.clearance.toFixed(2)})`;
+
+      const rad = (STATE.dovetailAngle * Math.PI) / 180;
+      const headW = STATE.jointWidth + (2 * STATE.jointDepth) / Math.tan(rad);
+      document.getElementById('hud-lockdims').textContent = `${STATE.jointWidth.toFixed(1)} → ${headW.toFixed(1)} mm`;
+
+      const volCm3 = computeMeshVolumeCm3(geo);
+      document.getElementById('hud-vol').textContent = `${volCm3.toFixed(2)} cm³`;
+
+      const densities = {
+        'PLA (Stiff)': 1.24,
+        'PETG (Recommended for Snap)': 1.27,
+        'ABS / ASA': 1.04,
+        'TPU (Flex)': 1.21
+      };
+      const rho = densities[STATE.filamentPreset] || 1.24;
+      const massG = volCm3 * rho;
+      document.getElementById('hud-mass').textContent = `${massG.toFixed(1)} g (${STATE.filamentPreset.split(' ')[0]})`;
+
+      const innerAreaMm2 = Math.pow(Math.max(5, STATE.outerWidth - 2 * STATE.wallThickness), 2) * (STATE.baseShape === 'hexagon' ? 0.866 : 1.0);
+      const capMl = (innerAreaMm2 * (STATE.height - STATE.baseThickness)) / 1000.0;
+      document.getElementById('hud-cap').textContent = `${capMl.toFixed(0)} ml`;
+
+      // Cantilever Snap-Fit Strain Warning
+      const warnBox = document.getElementById('hud-warning');
+      const Lbeam = Math.max(4.0, STATE.jointDepth * 2.1);
+      const strain = (3 * STATE.snapBeamThick * STATE.snapHookLip) / (2 * Lbeam * Lbeam) * 100;
+
+      if (STATE.jointType === 'snap-cantilever' && STATE.filamentPreset === 'PLA (Stiff)' && strain > 2.2) {
+        warnBox.style.display = 'block';
+        warnBox.textContent = `⚠ High snap strain (${strain.toFixed(1)}%) for PLA — switch to PETG or reduce hook lip.`;
+      } else {
+        warnBox.style.display = 'none';
+      }
+    }
+
+    // ============================================================================
+    // 7. DYNAMIC UI GENERATOR & EVENT BINDINGS
+    // ============================================================================
+    const schemaContainer = document.getElementById('schema-container');
+    const controlRefs = {};
+
+    SCHEMA.forEach(group => {
+      const grpEl = document.createElement('div');
+      grpEl.className = 'param-group' + (group.open ? ' open' : '');
+
+      const hdr = document.createElement('button');
+      hdr.className = 'group-header';
+      hdr.innerHTML = `<span>${group.title}</span><span class="group-chevron">▶</span>`;
+      hdr.addEventListener('click', () => grpEl.classList.toggle('open'));
+
+      const body = document.createElement('div');
+      body.className = 'group-body';
+
+      group.params.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'ctrl-row' + (p.type === 'check' ? ' inline-check' : '');
+
+        if (p.type === 'range') {
+          const unitStr = p.unit ? ` ${p.unit}` : '';
+          row.innerHTML = `
+            <div class="ctrl-top">
+              <span class="ctrl-label">${p.label}</span>
+              <span class="ctrl-val" id="val-${p.key}">${STATE[p.key]}${unitStr}</span>
+            </div>
+            <div class="ctrl-inputs">
+              <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${STATE[p.key]}" />
+            </div>
+          `;
+          const inp = row.querySelector('input');
+          const valSpan = row.querySelector(`#val-${p.key}`);
+          inp.addEventListener('input', () => {
+            STATE[p.key] = parseFloat(inp.value);
+            valSpan.textContent = `${STATE[p.key]}${unitStr}`;
+            if (p.key === 'slideEngage') {
+              document.getElementById('engage-slider').value = STATE.slideEngage;
+              document.getElementById('engage-readout').textContent = `${STATE.slideEngage}%`;
+            }
+            updateScene();
+          });
+          controlRefs[p.key] = { inp, valSpan, unitStr, type: p.type };
+        } else if (p.type === 'select') {
+          row.innerHTML = `
+            <div class="ctrl-top"><span class="ctrl-label">${p.label}</span></div>
+            <select>${p.options.map(o => `<option value="${o}" ${o === STATE[p.key] ? 'selected' : ''}>${o}</option>`).join('')}</select>
+          `;
+          const sel = row.querySelector('select');
+          sel.addEventListener('change', () => {
+            STATE[p.key] = sel.value;
+            syncAssemblyButtons();
+            updateScene();
+          });
+          controlRefs[p.key] = { inp: sel, type: p.type };
+        } else if (p.type === 'check') {
+          row.innerHTML = `
+            <span class="ctrl-label" style="font-size:0.78rem">${p.label}</span>
+            <input type="checkbox" ${STATE[p.key] ? 'checked' : ''} />
+          `;
+          const chk = row.querySelector('input');
+          chk.addEventListener('change', () => {
+            STATE[p.key] = chk.checked;
+            updateScene();
+          });
+          controlRefs[p.key] = { inp: chk, type: p.type };
+        } else if (p.type === 'color') {
+          row.className = 'ctrl-row inline-check';
+          row.innerHTML = `
+            <span class="ctrl-label" style="font-size:0.78rem">${p.label}</span>
+            <input type="color" value="${STATE[p.key]}" />
+          `;
+          const col = row.querySelector('input');
+          col.addEventListener('input', () => {
+            STATE[p.key] = col.value;
+            updateScene();
+          });
+          controlRefs[p.key] = { inp: col, type: p.type };
+        }
+
+        body.appendChild(row);
+      });
+
+      grpEl.appendChild(hdr);
+      grpEl.appendChild(body);
+      schemaContainer.appendChild(grpEl);
+    });
+
+    function syncUIFromState() {
+      Object.keys(controlRefs).forEach(k => {
+        const ref = controlRefs[k];
+        if (ref.type === 'range') {
+          ref.inp.value = STATE[k];
+          ref.valSpan.textContent = `${STATE[k]}${ref.unitStr}`;
+        } else if (ref.type === 'select' || ref.type === 'color') {
+          ref.inp.value = STATE[k];
+        } else if (ref.type === 'check') {
+          ref.inp.checked = Boolean(STATE[k]);
+        }
+      });
+      document.getElementById('engage-slider').value = STATE.slideEngage;
+      document.getElementById('engage-readout').textContent = `${STATE.slideEngage}%`;
+      syncAssemblyButtons();
+    }
+
+    function syncAssemblyButtons() {
+      document.querySelectorAll('[data-asm]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.asm === STATE.assemblyMode);
+      });
+    }
+
+    // Presets Dropdown
+    const presetSelect = document.getElementById('preset-select');
+    Object.keys(PRESETS).forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      presetSelect.appendChild(opt);
+    });
+
+    function applyPreset(name) {
+      SCHEMA.forEach(g => g.params.forEach(p => { STATE[p.key] = p.default; }));
+      const overrides = PRESETS[name] || {};
+      Object.assign(STATE, overrides);
+      syncUIFromState();
+      updateScene();
+    }
+
+    presetSelect.addEventListener('change', () => applyPreset(presetSelect.value));
+    document.getElementById('btn-reset').addEventListener('click', () => applyPreset(presetSelect.value));
+
+    // Viewport Interactive Toolbars
+    document.querySelectorAll('[data-asm]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        STATE.assemblyMode = btn.dataset.asm;
+        syncUIFromState();
+        updateScene();
+      });
+    });
+
+    document.querySelectorAll('[data-cam]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.cam;
+        const d = STATE.outerWidth * 2.1;
+        controls.target.set(0, STATE.height * 0.45, 0);
+        if (mode === 'iso') camera.position.set(d, d * 0.95, d);
+        if (mode === 'top') camera.position.set(0, d * 1.65, 0.01);
+        if (mode === 'front') camera.position.set(0, STATE.height * 0.5, d * 1.5);
+        if (mode === 'side') camera.position.set(d * 1.5, STATE.height * 0.5, 0);
+        controls.update();
+      });
+    });
+
+    // Section Cut Inspection
+    const btnSecY = document.getElementById('btn-sec-y');
+    const btnSecX = document.getElementById('btn-sec-x');
+    const secWrap = document.getElementById('section-slider-wrap');
+
+    btnSecY.addEventListener('click', () => {
+      sectionMode = sectionMode === 'y' ? 'none' : 'y';
+      btnSecY.classList.toggle('active', sectionMode === 'y');
+      btnSecX.classList.remove('active');
+      secWrap.style.display = sectionMode === 'none' ? 'none' : 'block';
+      updateScene();
+    });
+
+    btnSecX.addEventListener('click', () => {
+      sectionMode = sectionMode === 'x' ? 'none' : 'x';
+      btnSecX.classList.toggle('active', sectionMode === 'x');
+      btnSecY.classList.remove('active');
+      secWrap.style.display = sectionMode === 'none' ? 'none' : 'block';
+      updateScene();
+    });
+
+    document.getElementById('sec-slider').addEventListener('input', e => {
+      sectionFrac = parseFloat(e.target.value) / 100;
+      document.getElementById('sec-readout').textContent = `${e.target.value}%`;
+      updateScene();
+    });
+
+    document.getElementById('engage-slider').addEventListener('input', e => {
+      STATE.slideEngage = parseFloat(e.target.value);
+      syncUIFromState();
+      updateScene();
+    });
+
+    // Theme Toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    });
+
+    // ============================================================================
+    // 8. EXPORT SUITE (.STL, .OBJ, .GLB, .PNG, .JSON, .ZIP + PRINT_GUIDE.txt)
+    // ============================================================================
+    function getFileBaseName() {
+      const date = new Date().toISOString().slice(0, 10);
+      return `tessellalock-${STATE.baseShape}-${STATE.jointType}-${date}`;
+    }
+
+    function downloadBlob(blob, filename) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+
+    function getExportTargetObject() {
+      if (STATE.exportTarget === 'full-assembly') {
+        return rootGroup.clone();
+      }
+      return new THREE.Mesh(currentUnitGeometry.clone(), new THREE.MeshStandardMaterial({ vertexColors: true }));
+    }
+
+    function generateSTLBuffer() {
+      const exporter = new STLExporter();
+      const target = getExportTargetObject();
+      // Rotate X by +90 deg so Y-up becomes Z-up for standard 3D slicers
+      target.rotation.x = Math.PI / 2;
+      target.updateMatrixWorld(true);
+      const res = exporter.parse(target, { binary: true });
+      return new Uint8Array(res.buffer);
+    }
+
+    function generateOBJString() {
+      const exporter = new OBJExporter();
+      return exporter.parse(getExportTargetObject());
+    }
+
+    function generatePrintGuideTxt() {
+      return [
+        `===================================================================`,
+        ` TESSELLALOCK STUDIO 3D — SLICER & MANUFACTURING GUIDE`,
+        `===================================================================`,
+        `Generated Date     : ${new Date().toISOString()}`,
+        `Base Shape         : ${STATE.baseShape} (Outer Width: ${STATE.outerWidth} mm, Height: ${STATE.height} mm)`,
+        `Locking Mechanism  : ${STATE.jointType} (${STATE.polarityMode})`,
+        `XY Clearance Gap   : ${STATE.clearance} mm`,
+        `Recommended Mat.   : ${STATE.filamentPreset}`,
+        ``,
+        `RECOMMENDED SLICER SETTINGS (OrcaSlicer / PrusaSlicer / Bambu Studio):`,
+        `  - Layer Height               : 0.20 mm`,
+        `  - Wall Loops / Perimeters    : 3 to 4 (for stiff mechanical interlock teeth)`,
+        `  - Infill                     : 15% Gyroid or Cubic`,
+        `  - Support Structures         : NONE REQUIRED (100% support-free 45° overhangs)`,
+        `  - Elephant Foot Compensation : 0.15 mm (built-in ${STATE.elephantChamfer} mm bottom chamfer included)`,
+        `  - Seam Position              : Aligned (avoid placing seam inside dovetail neck)`,
+        STATE.jointType === 'magnetic'
+          ? `  - Magnet Hardware            : Neodymium Disc Ø${STATE.magDiameter} × ${STATE.magThickness} mm (${STATE.magInsertStyle})`
+          : `  - Assembly Note              : Slide or snap adjacent units together along active walls.`
+      ].join('\n');
+    }
+
+    document.getElementById('exp-stl').addEventListener('click', () => {
+      downloadBlob(new Blob([generateSTLBuffer()], { type: 'application/octet-stream' }), `${getFileBaseName()}.stl`);
+    });
+
+    document.getElementById('exp-obj').addEventListener('click', () => {
+      downloadBlob(new Blob([generateOBJString()], { type: 'text/plain' }), `${getFileBaseName()}.obj`);
+    });
+
+    document.getElementById('exp-glb').addEventListener('click', () => {
+      const exporter = new GLTFExporter();
+      const target = getExportTargetObject();
+      target.scale.setScalar(0.001); // mm to meters
+      target.updateMatrixWorld(true);
+      exporter.parse(target, glb => {
+        downloadBlob(new Blob([glb], { type: 'model/gltf-binary' }), `${getFileBaseName()}.glb`);
+      }, err => console.error(err), { binary: true });
+    });
+
+    document.getElementById('exp-png').addEventListener('click', () => {
+      const prevGrid = gridHelper.visible;
+      gridHelper.visible = false;
+      renderer.setSize(2048, 2048, false);
+      camera.aspect = 1;
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+      canvas.toBlob(blob => {
+        downloadBlob(blob, `${getFileBaseName()}.png`);
+        gridHelper.visible = prevGrid;
+        onResize();
+      }, 'image/png');
+    });
+
+    document.getElementById('exp-json').addEventListener('click', () => {
+      downloadBlob(new Blob([JSON.stringify(STATE, null, 2)], { type: 'application/json' }), `${getFileBaseName()}.json`);
+    });
+
+    const fileInp = document.getElementById('imp-json-file');
+    document.getElementById('imp-json-btn').addEventListener('click', () => fileInp.click());
+    fileInp.addEventListener('change', e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          Object.assign(STATE, data);
+          syncUIFromState();
+          updateScene();
+        } catch (err) {
+          console.error('Invalid JSON preset', err);
+        }
+      };
+      reader.readAsText(f);
+    });
+
+    document.getElementById('exp-zip').addEventListener('click', () => {
+      const base = getFileBaseName();
+      const files = {
+        [`${base}.stl`]: generateSTLBuffer(),
+        [`${base}.obj`]: strToU8(generateOBJString()),
+        [`${base}.json`]: strToU8(JSON.stringify(STATE, null, 2)),
+        [`PRINT_GUIDE.txt`]: strToU8(generatePrintGuideTxt())
+      };
+      const zipped = zipSync(files, { level: 6 });
+      downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${base}-bundle.zip`);
+    });
+
+    // ============================================================================
+    // 9. RESIZE & RENDER LOOP
+    // ============================================================================
+    function onResize() {
+      const rect = document.getElementById('viewport-area').getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / Math.max(1, rect.height);
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', onResize);
+
+    // Initialize with Puzzle Tray Divider or Default Preset
+    applyPreset('Puzzle Tray Divider (Multi-Compartment)');
+    onResize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
