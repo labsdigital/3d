@@ -1,0 +1,3064 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskCraft Studio 3D — Parametric Desk Organizer & Workspace Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root[data-theme="dark"] {
+      --bg-app: #0d1015;
+      --bg-panel: #151921;
+      --bg-card: #1c222d;
+      --bg-card-hover: #242c3a;
+      --bg-input: #10141b;
+      --bg-glass: rgba(21, 25, 33, 0.88);
+      --text-main: #e6edf3;
+      --text-muted: #8b949e;
+      --border: #2a3240;
+      --accent: #f0883e;
+      --accent-hover: #ffa15f;
+      --teal: #2ea89c;
+      --warn-bg: rgba(240, 136, 62, 0.14);
+      --warn-border: #f0883e;
+    }
+    :root[data-theme="light"] {
+      --bg-app: #eff2f6;
+      --bg-panel: #ffffff;
+      --bg-card: #f6f8fa;
+      --bg-card-hover: #eaeef4;
+      --bg-input: #e9eef4;
+      --bg-glass: rgba(255, 255, 255, 0.92);
+      --text-main: #1c2128;
+      --text-muted: #57606a;
+      --border: #d0d7de;
+      --accent: #d96b1f;
+      --accent-hover: #b85612;
+      --teal: #1d8278;
+      --warn-bg: rgba(217, 107, 31, 0.12);
+      --warn-border: #d96b1f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg-app);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 395px 1fr;
+    }
+
+    @media (max-width: 860px) {
+      body { display: block; height: auto; overflow-y: auto; }
+      #viewport-area { position: sticky; top: 0; height: 60vh !important; z-index: 20; }
+      #sidebar { height: auto !important; overflow: visible !important; }
+    }
+
+    /* SIDEBAR */
+    #sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      z-index: 25;
+    }
+    .brand-header {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--bg-panel);
+      z-index: 12;
+    }
+    .brand-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 1.04rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.66rem;
+      background: var(--accent);
+      color: #111;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* PRESET LAUNCHER BAR IN SIDEBAR */
+    .preset-launcher {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .preset-launcher-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.71rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .btn-open-library {
+      width: 100%;
+      padding: 9px 12px;
+      background: linear-gradient(135deg, rgba(240, 136, 62, 0.18), rgba(46, 168, 156, 0.14));
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 0.86rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-open-library:hover {
+      background: var(--accent);
+      color: #111;
+    }
+    .preset-nav-row {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    select, input[type="number"], input[type="text"], button {
+      font-family: inherit;
+      font-size: 0.8rem;
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 6px 8px;
+      outline: none;
+    }
+    select:focus, input:focus { border-color: var(--accent); }
+    button {
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    button:hover {
+      border-color: var(--accent);
+      background: var(--bg-card-hover);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      color: #000;
+    }
+
+    /* ACCORDION */
+    .param-group { border-bottom: 1px solid var(--border); }
+    .group-header {
+      width: 100%;
+      padding: 11px 16px;
+      background: var(--bg-panel);
+      border: none;
+      border-radius: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      text-align: left;
+    }
+    .group-header:hover { background: var(--bg-card); }
+    .group-body {
+      padding: 10px 16px 14px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--bg-card);
+    }
+    .param-group.open .group-body { display: flex; }
+    .group-chevron {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+    .param-group.open .group-chevron {
+      transform: rotate(90deg);
+      color: var(--accent);
+    }
+
+    /* CONTROLS */
+    .ctrl-row { display: flex; flex-direction: column; gap: 4px; }
+    .ctrl-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.77rem;
+    }
+    .ctrl-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.74rem;
+      color: var(--accent);
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .ctrl-row.inline-check {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 0;
+    }
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    input[type="color"] {
+      width: 42px;
+      height: 26px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: none;
+      cursor: pointer;
+    }
+
+    /* EXPORT FOOTER */
+    .export-panel {
+      padding: 14px 16px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    /* VIEWPORT AREA */
+    #viewport-area {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      background: radial-gradient(circle at 50% 42%, #1d2533 0%, #0c0f14 100%);
+      overflow: hidden;
+    }
+    :root[data-theme="light"] #viewport-area {
+      background: radial-gradient(circle at 50% 42%, #ffffff 0%, #e1e7ef 100%);
+    }
+    #three-canvas { width: 100%; height: 100%; display: block; }
+
+    /* OVERLAY TOOLBARS */
+    .overlay-top {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      gap: 10px;
+      flex-wrap: wrap;
+      z-index: 15;
+    }
+    .toolbar-card {
+      pointer-events: auto;
+      background: var(--bg-glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.22);
+    }
+    .toolbar-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+    .pill-btn {
+      font-size: 0.74rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .pill-btn.active {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* SEGMENTED MODE SWITCH (ASSEMBLED vs PRINT PLATE) */
+    .mode-switch-group {
+      display: inline-flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .mode-switch-btn {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .mode-switch-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .mode-switch-btn.active {
+      background: var(--accent);
+      color: #111;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    /* PROPS TOGGLE PILLS IN FLOATER & TOOLBAR */
+    .prop-chip-row {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px dashed var(--border);
+    }
+    .prop-chip {
+      font-size: 0.69rem;
+      padding: 3px 7px;
+      border-radius: 4px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .prop-chip.active {
+      background: rgba(240, 136, 62, 0.18);
+      border-color: var(--accent);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* TOP-RIGHT QUICK COLOR SHORTCUT MENU */
+    .quick-color-bar {
+      pointer-events: auto;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .qswatch-list {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .qswatch-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      padding: 0;
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.14s ease, border-color 0.14s ease;
+    }
+    .qswatch-btn:hover {
+      transform: scale(1.18);
+      border-color: var(--accent);
+    }
+    .qswatch-btn.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px var(--accent);
+      transform: scale(1.12);
+    }
+    .qpicker-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      background: var(--bg-input);
+      padding: 2px 6px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+    .qpicker-wrap input[type="color"] {
+      width: 20px;
+      height: 18px;
+      border: none;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    /* FLOATING PROPS & SECTION SLIDER */
+    .props-floater {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      pointer-events: auto;
+      background: var(--bg-glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      min-width: 285px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.22);
+      z-index: 15;
+    }
+    .floater-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    /* HUD TELEMETRY */
+    .hud-card {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      pointer-events: auto;
+      background: var(--bg-glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      width: 320px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.22);
+      z-index: 15;
+    }
+    .hud-heading {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .hud-row { display: flex; justify-content: space-between; }
+    .hud-row span:first-child { color: var(--text-muted); }
+    .hud-tip {
+      margin-top: 4px;
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      font-size: 0.69rem;
+      line-height: 1.35;
+    }
+
+    /* =========================================================================
+       DEDICATED 45+ PRESET LIBRARY MODAL / DRAWER MENU
+       ========================================================================= */
+    .library-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 10, 14, 0.72);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .library-backdrop.open {
+      display: flex;
+    }
+    .library-modal {
+      width: min(1120px, 96vw);
+      height: min(840px, 90vh);
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+    }
+    .lib-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--bg-card);
+    }
+    .lib-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lib-title-group h2 {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .lib-search-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 420px;
+    }
+    .lib-search-input {
+      width: 100%;
+      padding: 7px 11px;
+      font-size: 0.82rem;
+      border-radius: 6px;
+    }
+    .lib-cat-bar {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      background: var(--bg-panel);
+    }
+    .cat-tab {
+      font-size: 0.76rem;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .cat-tab:hover {
+      color: var(--text-main);
+      border-color: var(--accent);
+    }
+    .cat-tab.active {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .lib-grid {
+      padding: 18px 20px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
+      flex: 1;
+      align-content: start;
+    }
+    .preset-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      position: relative;
+    }
+    .preset-card:hover {
+      border-color: var(--accent);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+    .preset-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent) inset;
+    }
+    .pcard-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .pcard-cat {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+    .pcard-swatches {
+      display: flex;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+    .pcard-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    .pcard-name {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text-main);
+    }
+    .pcard-desc {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+    .pcard-meta {
+      margin-top: auto;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.69rem;
+      color: var(--text-muted);
+    }
+    .pcard-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .pcard-tag {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.63rem;
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- DEDICATED 53+ PRESET LIBRARY MODAL -->
+  <div class="library-backdrop" id="library-backdrop">
+    <div class="library-modal">
+      <div class="lib-header">
+        <div class="lib-title-group">
+          <h2>📚 DeskCraft Preset Library</h2>
+          <span class="brand-badge" id="lib-count-badge">53 Presets</span>
+        </div>
+        <div class="lib-search-row">
+          <input type="text" id="lib-search" class="lib-search-input" placeholder="Search 53+ presets (e.g., Desk Organizer, Gridfinity, Copic, SD, Phone, EDC)..." />
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button id="btn-lib-random" title="Load Random Preset">🎲 Surprise Me</button>
+          <button id="btn-lib-close" class="btn-primary">✕ Close</button>
+        </div>
+      </div>
+
+      <div class="lib-cat-bar" id="lib-cat-bar"></div>
+      <div class="lib-grid" id="lib-grid"></div>
+    </div>
+  </div>
+
+  <!-- LEFT SIDEBAR -->
+  <aside id="sidebar">
+    <div class="brand-header">
+      <div class="brand-title">
+        <span>DeskCraft Studio</span>
+        <span class="brand-badge">DESK CAD</span>
+      </div>
+      <button id="theme-toggle" title="Toggle Dark/Light Theme">◐ Theme</button>
+    </div>
+
+    <!-- DEDICATED PRESET LIBRARY LAUNCHER & QUICK NAV -->
+    <div class="preset-launcher">
+      <div class="preset-launcher-top">
+        <span>Active Preset Template</span>
+        <span id="active-preset-index" style="font-family:'IBM Plex Mono',monospace; color:var(--accent)">1 / 53</span>
+      </div>
+      <button class="btn-open-library" id="btn-open-lib-sidebar">
+        <span>📚 Browse 53+ Presets Library</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:0.74rem;">OPEN ↗</span>
+      </button>
+      <div class="preset-nav-row">
+        <button id="btn-prev-preset" title="Previous Preset">◀</button>
+        <select id="preset-select" style="flex:1"></select>
+        <button id="btn-next-preset" title="Next Preset">▶</button>
+        <button id="btn-random-preset" title="Random Preset">🎲</button>
+        <button id="btn-reset" title="Reset Current Preset">↺</button>
+      </div>
+    </div>
+
+    <div id="schema-container"></div>
+
+    <div class="export-panel">
+      <div style="font-size:0.73rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">
+        3D Print & CAD Export (1:1 mm)
+      </div>
+      <div class="export-grid">
+        <button id="exp-stl" class="btn-primary">.STL (Z-Up)</button>
+        <button id="exp-obj">.OBJ (Mesh)</button>
+        <button id="exp-glb">.GLB (3D)</button>
+        <button id="exp-png">.PNG (2048px)</button>
+        <button id="exp-json">Save .JSON</button>
+        <button id="imp-json-btn">Load .JSON</button>
+      </div>
+      <button id="exp-zip" class="btn-primary" style="width:100%; padding:8px;">
+        📦 Export All Bundle (.ZIP + SLICER_SPECS.txt)
+      </button>
+      <input type="file" id="imp-json-file" accept=".json" style="display:none" />
+    </div>
+  </aside>
+
+  <!-- RIGHT 3D VIEWPORT -->
+  <main id="viewport-area">
+    <canvas id="three-canvas"></canvas>
+
+    <div class="overlay-top">
+      <!-- Left/Center Toolbar: Layout Mode Switch (Assembled vs Print Plate), Presets & View Tools -->
+      <div style="display:flex; flex-direction:column; gap:8px; pointer-events:none; max-width: calc(100% - 390px);">
+        <div class="toolbar-card">
+          <div class="mode-switch-group" title="Switch between Assembled Desk View and Flat Y=0 Print Plate Part Layout">
+            <button class="mode-switch-btn active" data-layout="assembled" id="btn-mode-assembled">🧩 Assembled</button>
+            <button class="mode-switch-btn" data-layout="print-plate" id="btn-mode-plate">🖨️ Print Plate</button>
+          </div>
+          <!-- Dedicated Show/Hide Sample Objects Control right inside Assembled Menu Bar -->
+          <button class="pill-btn active" id="btn-assembled-props" title="Show/Hide Contoh Objek di dalam Wadah (Pensil, HP/Tablet, SD Card, Sticky Note)">
+            ✏️📱 Isi Wadah: ON
+          </button>
+          <span style="color:var(--border)">|</span>
+          <button class="pill-btn btn-primary" id="btn-open-lib-top">📚 Presets (53)</button>
+          <button class="pill-btn active" data-qcat="Desk Organizers">Desk Organizers</button>
+          <button class="pill-btn" data-qcat="Creator Hubs">Creator</button>
+          <button class="pill-btn" data-qcat="Pen & Art">Pen/Art</button>
+          <button class="pill-btn" data-qcat="Phone Docks">Phone Dock</button>
+          <button class="pill-btn" data-qcat="Media & USB">SD/USB</button>
+          <button class="pill-btn" data-qcat="Gridfinity">Gridfinity</button>
+          <button class="pill-btn" data-qcat="EDC & Maker">EDC</button>
+        </div>
+
+        <!-- Second Row: Camera, Props, Cutaway & Grid -->
+        <div class="toolbar-card">
+          <span class="toolbar-title">View:</span>
+          <button class="pill-btn" data-cam="iso">Iso</button>
+          <button class="pill-btn" data-cam="front">Front</button>
+          <button class="pill-btn" data-cam="top">Top</button>
+          <button class="pill-btn" data-cam="side">Side</button>
+          <span style="color:var(--border)">|</span>
+          <button class="pill-btn active" id="btn-props" title="Show/Hide Reference Pens, Phone & SD Cards">📱 Contoh Objek</button>
+          <button class="pill-btn" id="btn-sec-x">✂ Cut X</button>
+          <button class="pill-btn" id="btn-sec-z">✂ Cut Z</button>
+          <button class="pill-btn active" id="btn-toggle-grid"># Grid</button>
+        </div>
+      </div>
+
+      <!-- Top-Right Quick Color Shortcut Menu -->
+      <div class="quick-color-bar" id="quick-color-bar">
+        <span class="toolbar-title">🎨 Color:</span>
+        <div class="qswatch-list" id="qswatch-list"></div>
+        <div class="qpicker-wrap" title="Body Filament Color">
+          <span>Body</span>
+          <input type="color" id="quick-color-body" value="#2b3544" />
+        </div>
+        <div class="qpicker-wrap" title="Top Rim / Accent Filament Color">
+          <span>Rim</span>
+          <input type="color" id="quick-color-accent" value="#f0883e" />
+        </div>
+        <button class="pill-btn active" id="quick-twotone-btn" title="Toggle Two-Tone Rim Highlight">2-Tone</button>
+      </div>
+    </div>
+
+    <!-- Reference Props & Cutaway Controller -->
+    <div class="props-floater" id="props-floater">
+      <div class="floater-header" style="align-items:center; gap:8px;">
+        <span>Contoh Objek (Pensil, HP/Tablet, dll)</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span id="props-readout" style="font-family:'IBM Plex Mono',monospace; color:var(--accent)">100%</span>
+          <button class="pill-btn active" id="btn-floater-props-toggle" style="padding:2px 7px; font-size:0.68rem;">Show</button>
+        </div>
+      </div>
+      <input type="range" id="props-slider" min="0" max="100" step="1" value="100" />
+      <div class="prop-chip-row" id="prop-chip-row">
+        <button class="prop-chip active" data-prop-item="pens" title="Tampilkan/Sembunyikan Pensil, Pulpen & Spidol">✏️ Pensil/Spidol</button>
+        <button class="prop-chip active" data-prop-item="device" title="Tampilkan/Sembunyikan HP / Tablet">📱 HP/Tablet</button>
+        <button class="prop-chip active" data-prop-item="media" title="Tampilkan/Sembunyikan SD Card & USB Flashdisk">💾 SD/USB</button>
+        <button class="prop-chip active" data-prop-item="notes" title="Tampilkan/Sembunyikan Sticky Notes & Kartu Nama">📝 Notes/Kartu</button>
+      </div>
+      <div id="cut-slider-wrap" style="display:none; margin-top:8px; padding-top:6px; border-top:1px solid var(--border)">
+        <div class="floater-header">
+          <span>Cross-Section Plane Position</span>
+          <span id="cut-readout" style="font-family:'IBM Plex Mono',monospace; color:var(--teal)">50%</span>
+        </div>
+        <input type="range" id="cut-slider" min="5" max="95" step="1" value="50" />
+      </div>
+    </div>
+
+    <!-- Engineering & Print HUD -->
+    <div class="hud-card">
+      <div class="hud-heading">
+        <span id="hud-preset-title">ORGANIZER TELEMETRY</span>
+        <span id="hud-ms">0 ms</span>
+      </div>
+      <div class="hud-row"><span>Overall Footprint:</span><strong id="hud-dims">-</strong></div>
+      <div class="hud-row"><span>Gridfinity Units:</span><strong id="hud-gridf">-</strong></div>
+      <div class="hud-row"><span>Compartment Bays:</span><strong id="hud-bays">-</strong></div>
+      <div class="hud-row"><span>Media & Card Slots:</span><strong id="hud-slots">-</strong></div>
+      <div class="hud-row"><span>Material Volume:</span><strong id="hud-vol">-</strong></div>
+      <div class="hud-row"><span>Est. Filament Weight:</span><strong id="hud-mass">-</strong></div>
+      <div class="hud-tip" id="hud-tip">
+        ✓ Support-free geometry: All cable tunnels & base recesses use 45° printability chamfers.
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+    import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
+    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
+
+    // ============================================================================
+    // 1. PARAMETER SCHEMA (7 Groups Specific to Desk Organizers)
+    // ============================================================================
+    const SCHEMA = [
+      {
+        id: 'chassis',
+        title: '1. Base Footprint & Stadium Tiering',
+        open: true,
+        params: [
+          { key: 'snapGridfinity', label: 'Snap footprint to 42mm Gridfinity', type: 'check', default: false },
+          { key: 'totalWidth', label: 'Total width (X)', type: 'range', min: 42, max: 260, step: 1, default: 168, unit: 'mm' },
+          { key: 'totalDepth', label: 'Total depth (Z)', type: 'range', min: 42, max: 220, step: 1, default: 126, unit: 'mm' },
+          { key: 'rearHeight', label: 'Rear tier height (tallest)', type: 'range', min: 20, max: 160, step: 1, default: 92, unit: 'mm' },
+          { key: 'frontHeight', label: 'Front tier height (lowest)', type: 'range', min: 12, max: 140, step: 1, default: 36, unit: 'mm' },
+          { key: 'tierProfile', label: 'Side elevation profile', type: 'select', options: ['stepped-stadium', 'smooth-slope', 'uniform-flat'], default: 'stepped-stadium' },
+          { key: 'cornerRadius', label: 'Outer corner fillet radius', type: 'range', min: 1, max: 24, step: 0.5, default: 8, unit: 'mm' },
+          { key: 'wallThickness', label: 'Outer shell thickness', type: 'range', min: 1.6, max: 5.0, step: 0.2, default: 2.6, unit: 'mm' },
+          { key: 'floorThickness', label: 'Base floor thickness', type: 'range', min: 1.6, max: 6.0, step: 0.2, default: 2.8, unit: 'mm' }
+        ]
+      },
+      {
+        id: 'compartments',
+        title: '2. Compartment Grid & Ergonomic Scoops',
+        open: true,
+        params: [
+          { key: 'colsX', label: 'Columns across width (X)', type: 'range', min: 1, max: 6, step: 1, default: 3 },
+          { key: 'rowsZ', label: 'Tiers / Rows front-to-back (Z)', type: 'range', min: 1, max: 4, step: 1, default: 3 },
+          { key: 'dividerThick', label: 'Internal divider thickness', type: 'range', min: 1.2, max: 4.0, step: 0.2, default: 2.0, unit: 'mm' },
+          { key: 'mergeFrontRow', label: 'Merge front row into wide tray', type: 'check', default: false },
+          { key: 'frontThumbScoop', label: 'Front finger/sticky-note cutout', type: 'check', default: true },
+          { key: 'scoopWidthFrac', label: 'Front cutout width fraction', type: 'range', min: 0.2, max: 0.75, step: 0.05, default: 0.45 },
+          { key: 'scoopDepthFrac', label: 'Front cutout depth fraction', type: 'range', min: 0.2, max: 0.85, step: 0.05, default: 0.55 },
+          { key: 'bottomScoopFillet', label: 'Interior bottom coin/clip scoop', type: 'range', min: 0, max: 12, step: 0.5, default: 4.0, unit: 'mm' }
+        ]
+      },
+      {
+        id: 'dock',
+        title: '3. Phone / Tablet Stand & Cable Channel',
+        open: true,
+        params: [
+          { key: 'enablePhoneDock', label: 'Enable front device stand dock', type: 'check', default: true },
+          { key: 'dockWidth', label: 'Device slot width', type: 'range', min: 55, max: 180, step: 1, default: 86, unit: 'mm' },
+          { key: 'dockThickness', label: 'Device slot thickness (with case)', type: 'range', min: 9, max: 22, step: 0.5, default: 14.0, unit: 'mm' },
+          { key: 'dockTiltAngle', label: 'Viewing tilt angle', type: 'range', min: 5, max: 28, step: 1, default: 14, unit: '°' },
+          { key: 'chargingPass', label: 'Bottom USB-C charging cable pass-through', type: 'check', default: true },
+          { key: 'cableSlotWidth', label: 'Cable pass-through width', type: 'range', min: 8, max: 24, step: 1, default: 14, unit: 'mm' }
+        ]
+      },
+      {
+        id: 'media',
+        title: '4. Tech Media Slots (SD, MicroSD, USB, Cards)',
+        open: true,
+        params: [
+          { key: 'enableMediaDeck', label: 'Enable front solid media deck', type: 'check', default: true },
+          { key: 'sdCardSlots', label: 'Full-size SD card slots (25×2.6mm)', type: 'range', min: 0, max: 8, step: 1, default: 3 },
+          { key: 'microSdSlots', label: 'MicroSD card slots (12×1.5mm)', type: 'range', min: 0, max: 8, step: 1, default: 4 },
+          { key: 'usbASlots', label: 'USB-A flash drive slots (12.6×5.0mm)', type: 'range', min: 0, max: 6, step: 1, default: 2 },
+          { key: 'usbCSlots', label: 'USB-C dongle slots (9.0×3.2mm)', type: 'range', min: 0, max: 6, step: 1, default: 2 },
+          { key: 'bizCardSlot', label: 'Business card display groove', type: 'check', default: true }
+        ]
+      },
+      {
+        id: 'sidewings',
+        title: '5. Side Utility Wings (Cable Comb & Cup)',
+        open: false,
+        params: [
+          { key: 'enableCableComb', label: 'Right-side charging cable comb', type: 'check', default: true },
+          { key: 'cableCombClawCount', label: 'Number of cable slots', type: 'range', min: 2, max: 6, step: 1, default: 3 },
+          { key: 'cableGapDia', label: 'Cable neck diameter', type: 'range', min: 3.0, max: 6.5, step: 0.2, default: 4.2, unit: 'mm' },
+          { key: 'enableSidePenLoops', label: 'Left-side quick marker holsters', type: 'check', default: false },
+          { key: 'penLoopDia', label: 'Marker holster inner diameter', type: 'range', min: 10, max: 20, step: 0.5, default: 13.5, unit: 'mm' }
+        ]
+      },
+      {
+        id: 'base',
+        title: '6. Baseplate System & 3D Printability (DfAM)',
+        open: false,
+        params: [
+          { key: 'baseStyle', label: 'Bottom base style', type: 'select', options: ['flat-chamfered', 'gridfinity-42mm', 'silicone-bumper-wells'], default: 'flat-chamfered' },
+          { key: 'elephantChamfer', label: 'Bottom elephant-foot chamfer', type: 'range', min: 0, max: 2.5, step: 0.1, default: 0.8, unit: 'mm' },
+          { key: 'topRimFillet', label: 'Top rim comfort bevel', type: 'range', min: 0, max: 2.0, step: 0.1, default: 0.7, unit: 'mm' },
+          { key: 'bumperDia', label: 'Silicone foot pad diameter', type: 'range', min: 8, max: 16, step: 0.5, default: 10.5, unit: 'mm' },
+          { key: 'filamentType', label: 'Filament density preset', type: 'select', options: ['Matte PLA (1.24 g/cm³)', 'PETG (1.27 g/cm³)', 'ABS / ASA (1.04 g/cm³)', 'Wood/CF PLA (1.18 g/cm³)'], default: 'Matte PLA (1.24 g/cm³)' }
+        ]
+      },
+      {
+        id: 'visual',
+        title: '7. Color, Material & Viewport Display',
+        open: false,
+        params: [
+          { key: 'colorBody', label: 'Organizer body color', type: 'color', default: '#2b3544' },
+          { key: 'colorAccent', label: 'Interior & rim accent color', type: 'color', default: '#f0883e' },
+          { key: 'twoToneRim', label: 'Two-tone top rim highlight', type: 'check', default: true },
+          { key: 'roughness', label: 'Matte surface roughness', type: 'range', min: 0.1, max: 1.0, step: 0.02, default: 0.55 },
+          { key: 'metalness', label: 'Metallic sheen', type: 'range', min: 0, max: 0.8, step: 0.02, default: 0.06 },
+          { key: 'wireframe', label: 'Wireframe CAD overlay', type: 'check', default: false },
+          { key: 'autoRotate', label: 'Auto-rotate turntable', type: 'check', default: false },
+          { key: 'showProps', label: 'Show reference desk items', type: 'check', default: true },
+          { key: 'showGrid', label: 'Show build-plate grid', type: 'check', default: true }
+        ]
+      }
+    ];
+
+    // ============================================================================
+    // 2. COMPREHENSIVE 53 PRESETS LIBRARY (Organized Across 8 Categories)
+    // ============================================================================
+    const PRESET_LIBRARY = [
+      // ---------------- CATEGORY 1: DESK ORGANIZERS (8) ----------------
+      {
+        name: 'Classic Multi-Tier Desk Organizer',
+        category: 'Desk Organizers',
+        desc: 'Balanced 3-tier stadium desktop organizer with tall rear pen bays, middle supply compartments, and front sticky-note scoop tray.',
+        tags: ['3-Tier Stadium', '9 Bays', 'Thumb Scoop'],
+        config: {
+          snapGridfinity: false, totalWidth: 165, totalDepth: 120, rearHeight: 95, frontHeight: 34,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 3, mergeFrontRow: true,
+          frontThumbScoop: true, scoopWidthFrac: 0.45, scoopDepthFrac: 0.60, bottomScoopFillet: 4.5,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 3, enableSidePenLoops: true, penLoopDia: 13.5,
+          colorBody: '#2b3544', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+      {
+        name: 'Executive All-in-One Desk Caddy',
+        category: 'Desk Organizers',
+        desc: 'Premium executive workstation organizer featuring business card display, fountain pen compartments, phone stand, and cable comb.',
+        tags: ['Executive', 'Phone Dock', 'Biz Card Slot'],
+        config: {
+          snapGridfinity: false, totalWidth: 185, totalDepth: 125, rearHeight: 88, frontHeight: 32,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 5.0,
+          enablePhoneDock: true, dockWidth: 88, dockThickness: 14.0, dockTiltAngle: 14, chargingPass: true,
+          enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 2, usbASlots: 2, usbCSlots: 2, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 3, enableSidePenLoops: false,
+          colorBody: '#24292f', colorAccent: '#d4a359', twoToneRim: true
+        }
+      },
+      {
+        name: 'Corner-Fit Compact Desk Organizer',
+        category: 'Desk Organizers',
+        desc: 'Space-saving square footprint (115×115mm) with deep rounded corners and smooth ergonomic slope for tight desk corners.',
+        tags: ['Compact Square', 'Smooth Slope', '4 Bays'],
+        config: {
+          snapGridfinity: false, totalWidth: 115, totalDepth: 115, rearHeight: 92, frontHeight: 38,
+          tierProfile: 'smooth-slope', cornerRadius: 16, colsX: 2, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: true, bottomScoopFillet: 5.0,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: true, penLoopDia: 13.5,
+          colorBody: '#2c5e58', colorAccent: '#e2a04a', twoToneRim: true
+        }
+      },
+      {
+        name: 'Wide Monitor Riser Under-Shelf Tray',
+        category: 'Desk Organizers',
+        desc: 'Low-profile 240mm wide organizer engineered to slide neatly underneath a monitor stand for pens, dongles, clips, and sticky notes.',
+        tags: ['Under-Monitor', 'Low 36mm', 'Wide 240mm'],
+        config: {
+          snapGridfinity: false, totalWidth: 240, totalDepth: 95, rearHeight: 36, frontHeight: 24,
+          tierProfile: 'stepped-stadium', colsX: 4, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, bottomScoopFillet: 7.5,
+          enablePhoneDock: false, enableMediaDeck: true, sdCardSlots: 3, microSdSlots: 4, usbASlots: 3, usbCSlots: 3, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 4, enableSidePenLoops: false,
+          colorBody: '#1e293b', colorAccent: '#38bdf8', twoToneRim: true
+        }
+      },
+      {
+        name: 'Student Study Desk Station',
+        category: 'Desk Organizers',
+        desc: 'Complete study desk organizer with highlighters & stationery bays, smartphone lecture stand, flashcard slot, and side marker loops.',
+        tags: ['Study Station', 'Phone Stand', 'Side Loops'],
+        config: {
+          snapGridfinity: false, totalWidth: 170, totalDepth: 120, rearHeight: 96, frontHeight: 36,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 3, mergeFrontRow: true,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 85, chargingPass: true,
+          enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 3, enableSidePenLoops: true, penLoopDia: 14.0,
+          colorBody: '#3a506b', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+      {
+        name: 'Minimalist Architect Desk Organizer',
+        category: 'Desk Organizers',
+        desc: 'Clean architectural lines with thick 3.2mm walls, drafting tool bays, scale ruler slot, and monochrome matte finish.',
+        tags: ['Architect', 'Thick Wall', 'Drafting'],
+        config: {
+          snapGridfinity: false, totalWidth: 180, totalDepth: 110, rearHeight: 104, frontHeight: 38,
+          tierProfile: 'stepped-stadium', cornerRadius: 4, wallThickness: 3.2, colsX: 4, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 4.0,
+          enablePhoneDock: false, enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 2, usbASlots: 2, usbCSlots: 2, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: true, penLoopDia: 14.0,
+          colorBody: '#2b2d42', colorAccent: '#8d99ae', twoToneRim: true
+        }
+      },
+      {
+        name: 'Dual-Compartment Stationery & Mail Sorter',
+        category: 'Desk Organizers',
+        desc: 'Combines a wide rear letter/notebook slot with front stationery bays, paperclip scoop tray, and business card groove.',
+        tags: ['Mail & Notebook', 'Paperclip Scoop', 'Card Groove'],
+        config: {
+          snapGridfinity: false, totalWidth: 175, totalDepth: 115, rearHeight: 105, frontHeight: 35,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 3, mergeFrontRow: true,
+          frontThumbScoop: true, scoopWidthFrac: 0.50, scoopDepthFrac: 0.65, bottomScoopFillet: 6.5,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: false,
+          colorBody: '#354f52', colorAccent: '#dda15e', twoToneRim: true
+        }
+      },
+      {
+        name: 'Modular Work-From-Home Desk Hub',
+        category: 'Desk Organizers',
+        desc: 'Gridfinity 4×3u compatible WFH desk organizer with webcam-angle phone dock, USB dongle deck, pen bays, and cord organizer.',
+        tags: ['WFH Hub', 'Gridfinity 4×3', 'Full Featured'],
+        config: {
+          snapGridfinity: true, totalWidth: 168, totalDepth: 126, rearHeight: 88, frontHeight: 34,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 3, mergeFrontRow: false,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 88, dockTiltAngle: 12, chargingPass: true,
+          enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 3, usbASlots: 3, usbCSlots: 3, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 4, enableSidePenLoops: true, penLoopDia: 13.5,
+          colorBody: '#1f2937', colorAccent: '#10b981', twoToneRim: true
+        }
+      },
+
+      // ---------------- CATEGORY 2: CREATOR HUBS (7) ----------------
+      {
+        name: 'All-in-One Creator Caddy (Default)',
+        category: 'Creator Hubs',
+        desc: 'Complete 4×3u desk command hub with 3-tier pen bays, phone charging stand, SD/USB slots, and cable comb.',
+        tags: ['Gridfinity 4×3', 'Phone Dock', 'SD/USB', 'Cable Comb'],
+        config: {
+          snapGridfinity: true, totalWidth: 168, totalDepth: 126, rearHeight: 92, frontHeight: 36,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 3, mergeFrontRow: false,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 86, chargingPass: true,
+          enableMediaDeck: true, sdCardSlots: 3, microSdSlots: 4, usbASlots: 2, usbCSlots: 2, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 3, enableSidePenLoops: false,
+          colorBody: '#2b3544', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+      {
+        name: 'Streamer Deck & Dongle Command Hub',
+        category: 'Creator Hubs',
+        desc: 'Wide low-glare studio organizer for wireless mic receivers, stream dongles, SD cards, and smartphone monitor.',
+        tags: ['Phone Dock', '6× USB', 'Cable Comb'],
+        config: {
+          snapGridfinity: false, totalWidth: 210, totalDepth: 130, rearHeight: 78, frontHeight: 32,
+          tierProfile: 'stepped-stadium', colsX: 4, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: true, dockWidth: 92, chargingPass: true,
+          enableMediaDeck: true, sdCardSlots: 4, microSdSlots: 4, usbASlots: 3, usbCSlots: 3, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 4, enableSidePenLoops: true,
+          colorBody: '#181c24', colorAccent: '#00d4b2', twoToneRim: true
+        }
+      },
+      {
+        name: 'YouTuber SD/MicroSD & Mic Receiver Caddy',
+        category: 'Creator Hubs',
+        desc: 'Tailored for video editors with 6 full-size SD slots, 6 MicroSD slots, camera battery bays, and marker loops.',
+        tags: ['12× Cards', 'Battery Bays', 'Side Loops'],
+        config: {
+          snapGridfinity: true, totalWidth: 168, totalDepth: 126, rearHeight: 80, frontHeight: 30,
+          tierProfile: 'smooth-slope', colsX: 3, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 6, microSdSlots: 6, usbASlots: 2, usbCSlots: 2, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 3, enableSidePenLoops: true,
+          colorBody: '#252930', colorAccent: '#e63946', twoToneRim: true
+        }
+      },
+      {
+        name: 'Dual-Phone & Tablet Charging Station',
+        category: 'Creator Hubs',
+        desc: 'Extra-wide 170mm front charging dock capable of holding a tablet or two phones side-by-side with rear accessories.',
+        tags: ['170mm Dock', 'USB-C Pass', 'Wide'],
+        config: {
+          snapGridfinity: false, totalWidth: 200, totalDepth: 135, rearHeight: 88, frontHeight: 38,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: false, enablePhoneDock: true, dockWidth: 172, dockThickness: 15.5, chargingPass: true, cableSlotWidth: 20,
+          enableMediaDeck: false, enableCableComb: true, cableCombClawCount: 4, enableSidePenLoops: false,
+          colorBody: '#2d3748', colorAccent: '#ecc94b', twoToneRim: true
+        }
+      },
+      {
+        name: 'Developer Desk Hub (USB-C / Flash / Notes)',
+        category: 'Creator Hubs',
+        desc: 'Compact software engineer caddy with YubiKey/USB-C slots, thumb-scoop sticky note bay, and cable claw.',
+        tags: ['USB-C Hub', 'Sticky Notes', 'Cable Comb'],
+        config: {
+          snapGridfinity: true, totalWidth: 126, totalDepth: 126, rearHeight: 74, frontHeight: 32,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 82, chargingPass: true,
+          enableMediaDeck: true, sdCardSlots: 1, microSdSlots: 2, usbASlots: 3, usbCSlots: 4, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 3, enableSidePenLoops: false,
+          colorBody: '#1e293b', colorAccent: '#38bdf8', twoToneRim: true
+        }
+      },
+      {
+        name: 'Podcast Producer Utility Dock',
+        category: 'Creator Hubs',
+        desc: 'Smooth-sloped acoustic desk organizer for XLR adapters, ¼-inch jacks, notepad, pens, and phone timer dock.',
+        tags: ['Smooth Slope', 'Phone Stand', '4×2 Bays'],
+        config: {
+          snapGridfinity: false, totalWidth: 185, totalDepth: 120, rearHeight: 84, frontHeight: 34,
+          tierProfile: 'smooth-slope', colsX: 4, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 88, chargingPass: true,
+          enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 2, usbASlots: 2, usbCSlots: 2, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 5, enableSidePenLoops: true,
+          colorBody: '#28242c', colorAccent: '#f59e0b', twoToneRim: true
+        }
+      },
+      {
+        name: 'Ultra-Wide Mega Desk Organizer (252×126mm)',
+        category: 'Creator Hubs',
+        desc: 'Flagship 6×3u Gridfinity-compatible workstation organizer with 12 storage bays, media bar, phone dock, and dual wings.',
+        tags: ['6×3u Mega', '12 Bays', 'Full Featured'],
+        config: {
+          snapGridfinity: true, totalWidth: 252, totalDepth: 126, rearHeight: 96, frontHeight: 36,
+          tierProfile: 'stepped-stadium', colsX: 5, rowsZ: 3, mergeFrontRow: false,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 95, chargingPass: true,
+          enableMediaDeck: true, sdCardSlots: 5, microSdSlots: 6, usbASlots: 4, usbCSlots: 4, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 4, enableSidePenLoops: true,
+          colorBody: '#1f2933', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+
+      // ---------------- CATEGORY 2: PEN & ART (7) ----------------
+      {
+        name: 'Tiered Stationery & Pen Tower (3×3)',
+        category: 'Pen & Art',
+        desc: 'Classic 9-bay stadium pen and scissors organizer with smooth side profile and dual side marker holsters.',
+        tags: ['9 Bays', 'Tall 115mm', 'Side Holsters'],
+        config: {
+          snapGridfinity: false, totalWidth: 135, totalDepth: 115, rearHeight: 115, frontHeight: 48,
+          tierProfile: 'smooth-slope', colsX: 3, rowsZ: 3, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: false, enableSidePenLoops: true, penLoopDia: 14.0,
+          colorBody: '#2c5e58', colorAccent: '#e2a04a', twoToneRim: true
+        }
+      },
+      {
+        name: 'Artist Copic Marker Stadium (6×3)',
+        category: 'Pen & Art',
+        desc: '18-compartment stepped marker rack designed to sort alcohol markers, fineliners, and brush pens by color family.',
+        tags: ['18 Bays', '6×3 Matrix', 'Stepped'],
+        config: {
+          snapGridfinity: false, totalWidth: 220, totalDepth: 130, rearHeight: 108, frontHeight: 52,
+          tierProfile: 'stepped-stadium', colsX: 6, rowsZ: 3, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: false, enableSidePenLoops: true, penLoopDia: 15.0,
+          colorBody: '#2b2d42', colorAccent: '#ef233c', twoToneRim: true
+        }
+      },
+      {
+        name: 'Calligraphy & Fountain Pen Showcase',
+        category: 'Pen & Art',
+        desc: 'Elegant desk caddy with front ink-bottle/nib scoop tray and tall rear slots for fountain pens and dip holders.',
+        tags: ['Ink Tray', 'Fountain Pens', 'Scoop Fillet'],
+        config: {
+          snapGridfinity: false, totalWidth: 150, totalDepth: 105, rearHeight: 95, frontHeight: 34,
+          tierProfile: 'stepped-stadium', colsX: 4, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, bottomScoopFillet: 7.0, enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: false,
+          colorBody: '#3d2622', colorAccent: '#d4af37', twoToneRim: true
+        }
+      },
+      {
+        name: 'Watercolor Brush & Pencil Cup',
+        category: 'Pen & Art',
+        desc: 'Compact 2×2 deep cylindrical-cornered desktop cup for long paintbrushes, rulers, and sketching pencils.',
+        tags: ['Deep 125mm', '2×2 Grid', 'Compact'],
+        config: {
+          snapGridfinity: true, totalWidth: 84, totalDepth: 84, rearHeight: 125, frontHeight: 95,
+          tierProfile: 'smooth-slope', cornerRadius: 18, colsX: 2, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: false, enableSidePenLoops: true, penLoopDia: 13.0,
+          colorBody: '#386641', colorAccent: '#f2e8cf', twoToneRim: true
+        }
+      },
+      {
+        name: 'Architect Drafting & Ruler Caddy',
+        category: 'Pen & Art',
+        desc: 'Reinforced thick-wall organizer for steel scale rulers, mechanical pencils, compasses, and erasers.',
+        tags: ['Heavy Wall', 'Drafting', 'Front Tray'],
+        config: {
+          snapGridfinity: false, totalWidth: 175, totalDepth: 110, rearHeight: 110, frontHeight: 40,
+          tierProfile: 'stepped-stadium', wallThickness: 3.2, colsX: 4, rowsZ: 3, mergeFrontRow: true,
+          frontThumbScoop: true, enablePhoneDock: false, enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 2, usbASlots: 2, usbCSlots: 0, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: true,
+          colorBody: '#333533', colorAccent: '#f5cb5c', twoToneRim: true
+        }
+      },
+      {
+        name: 'Student Exam Essentials Desk Box',
+        category: 'Pen & Art',
+        desc: 'All-around study desk caddy for scientific calculator, highlighters, flashcards, and phone stand for video lectures.',
+        tags: ['Study Box', 'Phone Stand', 'Flashcards'],
+        config: {
+          snapGridfinity: false, totalWidth: 160, totalDepth: 120, rearHeight: 90, frontHeight: 38,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 84, chargingPass: true,
+          enableMediaDeck: false, bizCardSlot: false, enableCableComb: true, enableSidePenLoops: false,
+          colorBody: '#3a506b', colorAccent: '#5bc0be', twoToneRim: true
+        }
+      },
+      {
+        name: 'Dual-Wing Marker & Highlighter Tower',
+        category: 'Pen & Art',
+        desc: 'High-capacity vertical pen tower with side quick-draw holsters and rounded corners for classroom or office desks.',
+        tags: ['Tall Tower', 'Side Holsters', '4×3 Bays'],
+        config: {
+          snapGridfinity: false, totalWidth: 145, totalDepth: 115, rearHeight: 120, frontHeight: 55,
+          tierProfile: 'stepped-stadium', colsX: 4, rowsZ: 3, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 3, enableSidePenLoops: true, penLoopDia: 14.5,
+          colorBody: '#4a4e69', colorAccent: '#f28482', twoToneRim: true
+        }
+      },
+
+      // ---------------- CATEGORY 3: PHONE DOCKS (6) ----------------
+      {
+        name: 'Phone Charging Dock & Valet Tray',
+        category: 'Phone Docks',
+        desc: 'Ergonomic 14° tilted smartphone stand with bottom USB-C cable routing channel and rear valet trays.',
+        tags: ['14° Phone Stand', 'USB-C Tunnel', 'Valet'],
+        config: {
+          snapGridfinity: false, totalWidth: 180, totalDepth: 110, rearHeight: 58, frontHeight: 28,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, enablePhoneDock: true, dockWidth: 92, dockThickness: 14.5, dockTiltAngle: 14,
+          chargingPass: true, enableMediaDeck: false, bizCardSlot: false, enableCableComb: true,
+          colorBody: '#363b42', colorAccent: '#4ea8de', twoToneRim: true
+        }
+      },
+      {
+        name: 'iPad / Tablet Pro Stand + Stylus Rest',
+        category: 'Phone Docks',
+        desc: 'Wide heavy-base tablet stand (165mm slot width) with side Apple Pencil / stylus holster and rear accessory bins.',
+        tags: ['165mm Tablet', 'Stylus Loop', 'Heavy Base'],
+        config: {
+          snapGridfinity: false, totalWidth: 195, totalDepth: 135, rearHeight: 72, frontHeight: 34,
+          tierProfile: 'stepped-stadium', floorThickness: 3.8, colsX: 3, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: true, dockWidth: 165, dockThickness: 15.0, dockTiltAngle: 16,
+          chargingPass: true, cableSlotWidth: 18, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: true, enableSidePenLoops: true, penLoopDia: 11.5,
+          colorBody: '#2b2d42', colorAccent: '#8d99ae', twoToneRim: true
+        }
+      },
+      {
+        name: 'Vertical Dual-Phone Family Charger',
+        category: 'Phone Docks',
+        desc: 'Extra-wide dual smartphone dock (175mm slot) with 5-claw right-side charging cable comb to keep cords tidy.',
+        tags: ['Dual Phone', '5× Cable Comb', 'USB-C Pass'],
+        config: {
+          snapGridfinity: false, totalWidth: 205, totalDepth: 105, rearHeight: 54, frontHeight: 28,
+          tierProfile: 'smooth-slope', colsX: 2, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: true, dockWidth: 175, dockThickness: 15.0,
+          chargingPass: true, cableSlotWidth: 22, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 5, enableSidePenLoops: false,
+          colorBody: '#1d3557', colorAccent: '#f1faee', twoToneRim: true
+        }
+      },
+      {
+        name: 'Bedside Nightstand Phone & Watch Tray',
+        category: 'Phone Docks',
+        desc: 'Low-profile nightstand organizer with phone charging dock, deep filleted ring/watch scoop tray, and cord holder.',
+        tags: ['Nightstand', 'Ring Scoop', 'Cable Claw'],
+        config: {
+          snapGridfinity: false, totalWidth: 165, totalDepth: 115, rearHeight: 42, frontHeight: 24,
+          tierProfile: 'smooth-slope', cornerRadius: 14, colsX: 2, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, bottomScoopFillet: 9.0, enablePhoneDock: true, dockWidth: 88, chargingPass: true,
+          enableMediaDeck: false, bizCardSlot: false, enableCableComb: true, cableCombClawCount: 2,
+          colorBody: '#3d405b', colorAccent: '#e07a5f', twoToneRim: true
+        }
+      },
+      {
+        name: 'Zoom Call High-Angle Phone Stand',
+        category: 'Phone Docks',
+        desc: 'Elevated front deck with steeper 8° webcam-angle phone dock and rear compartments for meeting notes and pens.',
+        tags: ['Video Call', '8° Upright', 'Note Bays'],
+        config: {
+          snapGridfinity: false, totalWidth: 120, totalDepth: 105, rearHeight: 76, frontHeight: 44,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: true, dockWidth: 86, dockThickness: 13.5, dockTiltAngle: 8,
+          chargingPass: true, enableMediaDeck: false, bizCardSlot: true, enableCableComb: true,
+          colorBody: '#264653', colorAccent: '#2a9d8f', twoToneRim: true
+        }
+      },
+      {
+        name: 'MagSafe-Style Desk Stand + Coin Scoop',
+        category: 'Phone Docks',
+        desc: 'Compact 110×95mm phone stand with thick-case support (16.5mm slot) and easy-grab coin/key pocket.',
+        tags: ['Thick Case 16.5mm', 'Compact', 'Coin Tray'],
+        config: {
+          snapGridfinity: false, totalWidth: 110, totalDepth: 95, rearHeight: 52, frontHeight: 26,
+          tierProfile: 'stepped-stadium', colsX: 1, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, bottomScoopFillet: 8.0, enablePhoneDock: true, dockWidth: 88, dockThickness: 16.5,
+          chargingPass: true, enableMediaDeck: false, bizCardSlot: false, enableCableComb: true,
+          colorBody: '#212529', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+
+      // ---------------- CATEGORY 4: MEDIA & USB (7) ----------------
+      {
+        name: 'Photographer Pro SD / CF / USB Vault',
+        category: 'Media & USB',
+        desc: 'High-density memory card organizer with 6 SD slots, 6 MicroSD slots, 4 USB-A, 4 USB-C, and lens cap bays.',
+        tags: ['6 SD + 6 uSD', '8 USB Slots', 'Gridfinity 3×2'],
+        config: {
+          snapGridfinity: true, totalWidth: 126, totalDepth: 84, rearHeight: 42, frontHeight: 24,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 6, microSdSlots: 6, usbASlots: 4, usbCSlots: 4, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 4,
+          colorBody: '#1e242b', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+      {
+        name: 'MicroSD & Action Cam Media Bar (8+8 Slots)',
+        category: 'Media & USB',
+        desc: 'Maximum capacity 8× SD and 8× MicroSD deck with rear compartments for GoPro/DJI action camera batteries.',
+        tags: ['8 SD + 8 uSD', 'Action Cam', 'Wide Bar'],
+        config: {
+          snapGridfinity: false, totalWidth: 245, totalDepth: 88, rearHeight: 46, frontHeight: 24,
+          tierProfile: 'stepped-stadium', colsX: 4, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 8, microSdSlots: 8, usbASlots: 2, usbCSlots: 4, bizCardSlot: false,
+          enableCableComb: false, enableSidePenLoops: false,
+          colorBody: '#1a1d24', colorAccent: '#38b000', twoToneRim: true
+        }
+      },
+      {
+        name: 'IT Admin USB-A & USB-C Flash Drive Matrix',
+        category: 'Media & USB',
+        desc: 'Dedicated bootable USB stick and security token dock with 6 USB-A slots, 6 USB-C slots, and label card groove.',
+        tags: ['6 USB-A', '6 USB-C', 'SysAdmin'],
+        config: {
+          snapGridfinity: true, totalWidth: 168, totalDepth: 84, rearHeight: 38, frontHeight: 22,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 4, usbASlots: 6, usbCSlots: 6, bizCardSlot: true,
+          enableCableComb: true, cableCombClawCount: 3,
+          colorBody: '#0f172a', colorAccent: '#38bdf8', twoToneRim: true
+        }
+      },
+      {
+        name: 'Pocket Dongle & YubiKey Holder',
+        category: 'Media & USB',
+        desc: 'Ultra-compact 2×1u Gridfinity desk block for daily USB-C adapters, YubiKeys, MicroSDs, and a small parts tray.',
+        tags: ['Gridfinity 2×1', 'Compact 84×42', 'YubiKey'],
+        config: {
+          snapGridfinity: true, totalWidth: 84, totalDepth: 42, rearHeight: 28, frontHeight: 20,
+          tierProfile: 'uniform-flat', colsX: 2, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 1, microSdSlots: 3, usbASlots: 2, usbCSlots: 3, bizCardSlot: false,
+          enableCableComb: false, baseStyle: 'gridfinity-42mm',
+          colorBody: '#334155', colorAccent: '#f97316', twoToneRim: true
+        }
+      },
+      {
+        name: 'Drone Pilot Battery & MicroSD Tray',
+        category: 'Media & USB',
+        desc: '3 deep rear battery bays paired with an 8-slot MicroSD and SD reader front deck for aerial photographers.',
+        tags: ['3 Battery Bays', '8× MicroSD', 'Drone Hub'],
+        config: {
+          snapGridfinity: false, totalWidth: 175, totalDepth: 110, rearHeight: 64, frontHeight: 24,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 4, microSdSlots: 8, usbASlots: 2, usbCSlots: 3, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 3,
+          colorBody: '#2b2d42', colorAccent: '#ff9f1c', twoToneRim: true
+        }
+      },
+      {
+        name: 'Audio Engineer Adapter & Dongle Strip',
+        category: 'Media & USB',
+        desc: 'Low-profile studio console strip with filleted scoop compartments for ¼" adapters, iLok USB keys, and picks.',
+        tags: ['iLok USB', 'Guitar Picks', 'Scoop Bays'],
+        config: {
+          snapGridfinity: false, totalWidth: 190, totalDepth: 80, rearHeight: 34, frontHeight: 22,
+          tierProfile: 'smooth-slope', colsX: 4, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 7.5, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 2, usbASlots: 5, usbCSlots: 5, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 4,
+          colorBody: '#212529', colorAccent: '#e63946', twoToneRim: true
+        }
+      },
+      {
+        name: 'Compact 2×2 Gridfinity Media Insert',
+        category: 'Media & USB',
+        desc: '84×84mm modular Gridfinity block combining 2 small component bins with a front SD/USB media holder.',
+        tags: ['Gridfinity 2×2', '84×84mm', 'Modular'],
+        config: {
+          snapGridfinity: true, totalWidth: 84, totalDepth: 84, rearHeight: 38, frontHeight: 24,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 4, usbASlots: 2, usbCSlots: 3, bizCardSlot: false,
+          enableCableComb: false, baseStyle: 'gridfinity-42mm',
+          colorBody: '#1e3a8a', colorAccent: '#fbbf24', twoToneRim: true
+        }
+      },
+
+      // ---------------- CATEGORY 5: NOTES & CARDS (6) ----------------
+      {
+        name: 'Sticky Note (76×76mm) & Business Card Dispenser',
+        category: 'Notes & Cards',
+        desc: 'Precision-sized for standard 3×3 inch (76×76mm) Post-it pads with deep front finger scoop and business card groove.',
+        tags: ['76×76mm Post-It', 'Thumb Scoop', 'Card Slot'],
+        config: {
+          snapGridfinity: false, totalWidth: 92, totalDepth: 96, rearHeight: 48, frontHeight: 32,
+          tierProfile: 'stepped-stadium', colsX: 1, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, scoopWidthFrac: 0.50, scoopDepthFrac: 0.78,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: true,
+          colorBody: '#d9a35b', colorAccent: '#2b3544', twoToneRim: false
+        }
+      },
+      {
+        name: 'Executive Business Card & Pen Display',
+        category: 'Notes & Cards',
+        desc: 'Sleek low-profile executive desk nameplate & business card display with 3 rear pen/letter-opener bays.',
+        tags: ['Executive', 'Biz Card Groove', '3 Pen Bays'],
+        config: {
+          snapGridfinity: false, totalWidth: 150, totalDepth: 75, rearHeight: 78, frontHeight: 24,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: false, enablePhoneDock: false,
+          enableMediaDeck: true, sdCardSlots: 0, microSdSlots: 0, usbASlots: 2, usbCSlots: 2, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: false,
+          colorBody: '#24292f', colorAccent: '#d4a359', twoToneRim: true
+        }
+      },
+      {
+        name: 'Index Card (3×5") & Flashcard Filing Box',
+        category: 'Notes & Cards',
+        desc: 'Sized for 3×5 inch (76×127mm) Zettelkasten index cards and study flashcards with easy front retrieval cutout.',
+        tags: ['3×5" Index Card', 'Zettelkasten', 'Thumb Cutout'],
+        config: {
+          snapGridfinity: false, totalWidth: 142, totalDepth: 95, rearHeight: 75, frontHeight: 55,
+          tierProfile: 'stepped-stadium', colsX: 1, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, scoopWidthFrac: 0.45, scoopDepthFrac: 0.65,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: true,
+          colorBody: '#354f52', colorAccent: '#cad2c5', twoToneRim: true
+        }
+      },
+      {
+        name: 'Receptionist Front Desk Card & Pen Stand',
+        category: 'Notes & Cards',
+        desc: 'Welcoming counter caddy with prominent front business card slot, guest sign-in pen holsters, and clip tray.',
+        tags: ['Front Desk', 'Card Display', 'Pen Holsters'],
+        config: {
+          snapGridfinity: false, totalWidth: 135, totalDepth: 85, rearHeight: 85, frontHeight: 28,
+          tierProfile: 'smooth-slope', cornerRadius: 12, colsX: 2, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: true,
+          colorBody: '#283618', colorAccent: '#dda15e', twoToneRim: true
+        }
+      },
+      {
+        name: 'Double Post-It Pad & Paperclip Tray',
+        category: 'Notes & Cards',
+        desc: 'Side-by-side dual 76mm sticky note dispenser with rear pen compartments and filleted paperclip scoop.',
+        tags: ['Dual Sticky Pad', 'Paperclip Scoop', 'Wide'],
+        config: {
+          snapGridfinity: false, totalWidth: 172, totalDepth: 105, rearHeight: 65, frontHeight: 30,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: true, scoopWidthFrac: 0.60, scoopDepthFrac: 0.70, bottomScoopFillet: 6.0,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: false,
+          colorBody: '#457b9d', colorAccent: '#f1faee', twoToneRim: true
+        }
+      },
+      {
+        name: 'Mail, Envelope & Letter Sorter (3-Tier)',
+        category: 'Notes & Cards',
+        desc: 'Wide single-column 3-tier vertical sorter for incoming mail, bills, notebooks, and envelopes.',
+        tags: ['3-Tier Mail', 'Wide Slot', '190mm Width'],
+        config: {
+          snapGridfinity: false, totalWidth: 190, totalDepth: 115, rearHeight: 110, frontHeight: 45,
+          tierProfile: 'stepped-stadium', colsX: 1, rowsZ: 3, mergeFrontRow: true,
+          frontThumbScoop: true, scoopWidthFrac: 0.55, scoopDepthFrac: 0.60,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: true,
+          enableCableComb: false, enableSidePenLoops: false,
+          colorBody: '#2f3e46', colorAccent: '#e07a5f', twoToneRim: true
+        }
+      },
+
+      // ---------------- CATEGORY 6: GRIDFINITY (6) ----------------
+      {
+        name: 'Gridfinity 4×3 Multi-Compartment Workshop Bin',
+        category: 'Gridfinity',
+        desc: '168×126mm (4×3u) uniform-height workshop bin with 12 filleted compartments and 42mm Gridfinity mating base.',
+        tags: ['Gridfinity 4×3u', '12 Bays', '42mm Base'],
+        config: {
+          snapGridfinity: true, totalWidth: 168, totalDepth: 126, rearHeight: 56, frontHeight: 56,
+          tierProfile: 'uniform-flat', colsX: 4, rowsZ: 3, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 6.5,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false, enableCableComb: false,
+          baseStyle: 'gridfinity-42mm',
+          colorBody: '#3a7ca5', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+      {
+        name: 'Gridfinity 2×2 Deep Pen & Scissor Cup',
+        category: 'Gridfinity',
+        desc: '84×84mm (2×2u) tall Gridfinity module with 4 deep compartments for pliers, scissors, drivers, and markers.',
+        tags: ['Gridfinity 2×2u', 'Tall 98mm', '4 Bays'],
+        config: {
+          snapGridfinity: true, totalWidth: 84, totalDepth: 84, rearHeight: 98, frontHeight: 70,
+          tierProfile: 'stepped-stadium', colsX: 2, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 3.0,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false, enableCableComb: false,
+          baseStyle: 'gridfinity-42mm',
+          colorBody: '#2b3544', colorAccent: '#38bdf8', twoToneRim: true
+        }
+      },
+      {
+        name: 'Gridfinity 3×2 Small Parts & Screw Scoop Bin',
+        category: 'Gridfinity',
+        desc: '126×84mm (3×2u) hardware bin with generous 9mm curved bottom scoop fillets for effortless M3/M4 screw pickup.',
+        tags: ['Gridfinity 3×2u', '9mm Scoop', 'Hardware'],
+        config: {
+          snapGridfinity: true, totalWidth: 126, totalDepth: 84, rearHeight: 42, frontHeight: 42,
+          tierProfile: 'uniform-flat', colsX: 3, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 9.0,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false, enableCableComb: false,
+          baseStyle: 'gridfinity-42mm',
+          colorBody: '#374151', colorAccent: '#ef4444', twoToneRim: true
+        }
+      },
+      {
+        name: 'Gridfinity 2×1 Electronics Tweezers & Solder Caddy',
+        category: 'Gridfinity',
+        desc: 'Compact 84×42mm (2×1u) benchtop module for precision SMD tweezers, solder sucker, and flux syringes.',
+        tags: ['Gridfinity 2×1u', '84×42mm', 'SMD Tools'],
+        config: {
+          snapGridfinity: true, totalWidth: 84, totalDepth: 42, rearHeight: 70, frontHeight: 42,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 4.0,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false, enableCableComb: false,
+          baseStyle: 'gridfinity-42mm',
+          colorBody: '#1e293b', colorAccent: '#10b981', twoToneRim: true
+        }
+      },
+      {
+        name: 'Gridfinity 3×1 Low-Profile Coin & Washer Tray',
+        category: 'Gridfinity',
+        desc: 'Shallow 126×42mm (3×1u) 3-bay hardware strip with curved bottom scoop for washers, heat-set inserts, and nozzles.',
+        tags: ['Gridfinity 3×1u', 'Low 28mm', '3 Scoop Bays'],
+        config: {
+          snapGridfinity: true, totalWidth: 126, totalDepth: 42, rearHeight: 28, frontHeight: 28,
+          tierProfile: 'uniform-flat', colsX: 3, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 8.5,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false, enableCableComb: false,
+          baseStyle: 'gridfinity-42mm',
+          colorBody: '#3f3f46', colorAccent: '#f59e0b', twoToneRim: true
+        }
+      },
+      {
+        name: 'Gridfinity 4×2 Maker Tool & Caliper Stand',
+        category: 'Gridfinity',
+        desc: '168×84mm (4×2u) stadium tool holder for digital calipers, deburring tool, hex keys, and SD cards.',
+        tags: ['Gridfinity 4×2u', 'Caliper Slot', 'SD Deck'],
+        config: {
+          snapGridfinity: true, totalWidth: 168, totalDepth: 84, rearHeight: 84, frontHeight: 32,
+          tierProfile: 'stepped-stadium', colsX: 4, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 4.0,
+          enablePhoneDock: false, enableMediaDeck: true, sdCardSlots: 3, microSdSlots: 4, usbASlots: 2, usbCSlots: 2, bizCardSlot: false,
+          enableCableComb: false, baseStyle: 'gridfinity-42mm',
+          colorBody: '#1f2937', colorAccent: '#f97316', twoToneRim: true
+        }
+      },
+
+      // ---------------- CATEGORY 7: EDC & MAKER (6) ----------------
+      {
+        name: 'Compact EDC Pocket Dump & Watch Caddy',
+        category: 'EDC & Maker',
+        desc: 'Everyday Carry valet tray for folding knife, tactical flashlight, wallet, keys, watch, and charging smartphone.',
+        tags: ['EDC Valet', 'Phone Dock', '8mm Scoop'],
+        config: {
+          snapGridfinity: false, totalWidth: 195, totalDepth: 130, rearHeight: 45, frontHeight: 22,
+          tierProfile: 'smooth-slope', colsX: 2, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, bottomScoopFillet: 8.0,
+          enablePhoneDock: true, dockWidth: 85, chargingPass: true,
+          enableMediaDeck: false, bizCardSlot: false, enableCableComb: true,
+          colorBody: '#4a554c', colorAccent: '#e07a3a', twoToneRim: true
+        }
+      },
+      {
+        name: 'Soldering & Arduino Prototyping Desk Tray',
+        category: 'EDC & Maker',
+        desc: 'Electronics workbench caddy for Arduino/ESP32 boards, breadboard jumpers (on cable comb), and MicroSD/USB-C.',
+        tags: ['ESP32/Arduino', 'Jumper Comb', 'USB/uSD'],
+        config: {
+          snapGridfinity: false, totalWidth: 180, totalDepth: 120, rearHeight: 52, frontHeight: 24,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 6.0,
+          enablePhoneDock: false, enableMediaDeck: true, sdCardSlots: 2, microSdSlots: 6, usbASlots: 3, usbCSlots: 4, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 6, cableGapDia: 3.2,
+          colorBody: '#005f73', colorAccent: '#ee9b00', twoToneRim: true
+        }
+      },
+      {
+        name: '3D Printer Nozzle, Scraper & Allen Key Caddy',
+        category: 'EDC & Maker',
+        desc: 'Designed to sit right next to your FDM 3D printer: holds hex keys, brass nozzles, glue stick, and printer SD cards.',
+        tags: ['3D Printer Companion', 'SD/USB', 'Side Holsters'],
+        config: {
+          snapGridfinity: true, totalWidth: 126, totalDepth: 126, rearHeight: 78, frontHeight: 28,
+          tierProfile: 'stepped-stadium', colsX: 3, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, bottomScoopFillet: 6.0,
+          enablePhoneDock: false, enableMediaDeck: true, sdCardSlots: 4, microSdSlots: 4, usbASlots: 3, usbCSlots: 1, bizCardSlot: false,
+          enableCableComb: false, enableSidePenLoops: true, penLoopDia: 16.0,
+          colorBody: '#262626', colorAccent: '#f0883e', twoToneRim: true
+        }
+      },
+      {
+        name: 'Coffee Bar Sugar, Stirrer & Napkin Organizer',
+        category: 'EDC & Maker',
+        desc: 'Hospitality & home espresso bar caddy for sugar packets, tall wooden stirrers, coffee pods, and folded napkins.',
+        tags: ['Coffee Station', 'Napkin Scoop', '3×2 Bays'],
+        config: {
+          snapGridfinity: false, totalWidth: 170, totalDepth: 115, rearHeight: 95, frontHeight: 38,
+          tierProfile: 'stepped-stadium', cornerRadius: 14, colsX: 3, rowsZ: 2, mergeFrontRow: true,
+          frontThumbScoop: true, scoopWidthFrac: 0.55, scoopDepthFrac: 0.65,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: false, enableSidePenLoops: false,
+          colorBody: '#432818', colorAccent: '#ffe6a7', twoToneRim: true
+        }
+      },
+      {
+        name: 'Mechanical Keyboard Switch & Keycap Lubing Tray',
+        category: 'EDC & Maker',
+        desc: '6-compartment low-profile sorting tray with deep 9.5mm bottom scoops for MX switches, springs, stems, and lube brushes.',
+        tags: ['6 Switch Bays', '9.5mm Scoop', 'Keeb Builder'],
+        config: {
+          snapGridfinity: false, totalWidth: 195, totalDepth: 110, rearHeight: 32, frontHeight: 26,
+          tierProfile: 'smooth-slope', colsX: 3, rowsZ: 2, mergeFrontRow: false,
+          frontThumbScoop: false, bottomScoopFillet: 9.5,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: false, enableSidePenLoops: true, penLoopDia: 11.0,
+          colorBody: '#312e81', colorAccent: '#f472b6', twoToneRim: true
+        }
+      },
+      {
+        name: 'Minimalist Entryway Key, AirPods & Wallet Bowl',
+        category: 'EDC & Maker',
+        desc: 'Softly rounded 20mm corner-radius catch-all bowl with front grab cutout and silicone bumper feet wells.',
+        tags: ['Rounded Bowl', 'Silicone Feet', 'Entryway'],
+        config: {
+          snapGridfinity: false, totalWidth: 160, totalDepth: 115, rearHeight: 36, frontHeight: 24,
+          tierProfile: 'smooth-slope', cornerRadius: 22, colsX: 2, rowsZ: 1, mergeFrontRow: false,
+          frontThumbScoop: true, bottomScoopFillet: 10.0,
+          enablePhoneDock: false, enableMediaDeck: false, bizCardSlot: false,
+          enableCableComb: true, cableCombClawCount: 2, baseStyle: 'silicone-bumper-wells',
+          colorBody: '#3c4142', colorAccent: '#d9a35b', twoToneRim: true
+        }
+      }
+    ];
+
+    const STATE = {};
+    SCHEMA.forEach(g => g.params.forEach(p => { STATE[p.key] = p.default; }));
+    let currentPresetIndex = 0;
+    let layoutMode = 'assembled'; // 'assembled' | 'print-plate'
+
+    // Individual visibility toggles for sample objects inside the organizer
+    const PROP_ITEMS = {
+      pens: true,
+      device: true,
+      media: true,
+      notes: true
+    };
+
+    // Curated Dual-Tone Filament Palettes for Top-Right Quick Color Bar
+    const QUICK_PALETTES = [
+      { name: 'Charcoal & Industrial Amber', body: '#2b3544', accent: '#f0883e' },
+      { name: 'Nordic Pine & Brass Gold', body: '#2c5e58', accent: '#e2a04a' },
+      { name: 'Stealth Matte Black & Cyber Cyan', body: '#181c24', accent: '#00d4b2' },
+      { name: 'Prusa Galaxy Black & Orange', body: '#24272c', accent: '#ff6b2b' },
+      { name: 'Warm Espresso & Cream Latte', body: '#3d2622', accent: '#ffe6a7' },
+      { name: 'Cobalt Workshop & Safety Yellow', body: '#1e3a8a', accent: '#fbbf24' },
+      { name: 'Sage Olive & Terracotta Clay', body: '#4a554c', accent: '#e07a5f' },
+      { name: 'Architectural Light Grey & Navy', body: '#d8dee9', accent: '#2b3544' }
+    ];
+
+    // ============================================================================
+    // 3. THREE.JS SCENE, LIGHTING & ADAPTIVE GRID SETUP
+    // ============================================================================
+    const canvas = document.getElementById('three-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.localClippingEnabled = true;
+
+    const scene = new THREE.Scene();
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    const camera = new THREE.PerspectiveCamera(40, 1, 1, 3000);
+    camera.position.set(190, 155, 210);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 32, 0);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    keyLight.position.set(140, 240, 160);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x9ab8d8, 0.55);
+    fillLight.position.set(-150, 120, -120);
+    scene.add(fillLight);
+
+    let gridHelper = null;
+    function rebuildGridHelper() {
+      if (gridHelper) {
+        scene.remove(gridHelper);
+        gridHelper.geometry.dispose();
+        gridHelper.material.dispose();
+      }
+      const isLight = document.documentElement.dataset.theme === 'light';
+      const colorCenter = isLight ? 0x9aa4b0 : 0xf0883e;
+      const colorGrid = isLight ? 0xc8d0d8 : 0x262e3b;
+      gridHelper = new THREE.GridHelper(336, 32, colorCenter, colorGrid);
+      gridHelper.position.y = -0.05;
+      if (isLight && gridHelper.material) {
+        gridHelper.material.opacity = 0.65;
+        gridHelper.material.transparent = true;
+      }
+      gridHelper.visible = STATE.showGrid;
+      scene.add(gridHelper);
+    }
+    rebuildGridHelper();
+
+    const organizerGroup = new THREE.Group();
+    const propsGroup = new THREE.Group();
+    scene.add(organizerGroup);
+    scene.add(propsGroup);
+
+    // Section Clipping
+    let cutMode = 'none'; // 'none' | 'x' | 'z'
+    let cutFrac = 0.5;
+    const clipPlaneX = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+    const clipPlaneZ = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+
+    // ============================================================================
+    // 4. PROCEDURAL DESK ORGANIZER GEOMETRY ENGINE (2.5D SOLID + BOOLEAN SLOTS)
+    // ============================================================================
+    function evaluateTopHeightAtZ(z, D, p) {
+      const normZ = (z + D * 0.5) / Math.max(1, D); // 0 at rear (-D/2), 1 at front (+D/2)
+      if (p.tierProfile === 'uniform-flat') {
+        return p.rearHeight;
+      }
+      if (p.tierProfile === 'smooth-slope') {
+        const smooth = 0.5 - 0.5 * Math.cos(normZ * Math.PI);
+        return p.rearHeight + (p.frontHeight - p.rearHeight) * smooth;
+      }
+      const rows = Math.max(1, p.rowsZ);
+      if (rows === 1) return p.rearHeight;
+      const rowFloat = normZ * rows;
+      const rowIdx = Math.min(rows - 1, Math.floor(rowFloat));
+      const fracInRow = rowFloat - rowIdx;
+
+      const hCurr = p.rearHeight - (rowIdx / (rows - 1)) * (p.rearHeight - p.frontHeight);
+      const hNext = rowIdx < rows - 1
+        ? p.rearHeight - ((rowIdx + 1) / (rows - 1)) * (p.rearHeight - p.frontHeight)
+        : hCurr;
+
+      if (fracInRow > 0.88 && rowIdx < rows - 1) {
+        const k = (fracInRow - 0.88) / 0.12;
+        return hCurr + (hNext - hCurr) * k;
+      }
+      return hCurr;
+    }
+
+    function appendSolidBlock(positions, colors, x0, x1, y0, y1, z0, z1, colMain, colTop = null) {
+      if (x1 <= x0 || y1 <= y0 || z1 <= z0) return;
+      const cM = colMain;
+      const cT = colTop || colMain;
+
+      function v(x, y, z, c) {
+        positions.push(x, y, z);
+        colors.push(c.r, c.g, c.b);
+      }
+      function quad(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col) {
+        v(ax, ay, az, col); v(bx, by, bz, col); v(cx, cy, cz, col);
+        v(ax, ay, az, col); v(cx, cy, cz, col); v(dx, dy, dz, col);
+      }
+
+      quad(x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1, cM);
+      quad(x1, y0, z0, x0, y0, z0, x0, y1, z0, x1, y1, z0, cM);
+      quad(x1, y0, z1, x1, y0, z0, x1, y1, z0, x1, y1, z1, cM);
+      quad(x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0, cM);
+      quad(x0, y1, z1, x1, y1, z1, x1, y1, z0, x0, y1, z0, cT);
+      quad(x0, y0, z0, x1, y0, z0, x1, y0, z1, x0, y0, z1, cM);
+    }
+
+    function appendHollowCylinder(positions, colors, cx, cz, y0, y1, rInner, wallT, colMain, colTop) {
+      const segs = 28;
+      const rOuter = rInner + wallT;
+      for (let i = 0; i < segs; i++) {
+        const a0 = (i / segs) * Math.PI * 2;
+        const a1 = ((i + 1) / segs) * Math.PI * 2;
+        const c0 = Math.cos(a0), s0 = Math.sin(a0);
+        const c1 = Math.cos(a1), s1 = Math.sin(a1);
+
+        const ox0 = cx + c0 * rOuter, oz0 = cz + s0 * rOuter;
+        const ox1 = cx + c1 * rOuter, oz1 = cz + s1 * rOuter;
+        const ix0 = cx + c0 * rInner, iz0 = cz + s0 * rInner;
+        const ix1 = cx + c1 * rInner, iz1 = cz + s1 * rInner;
+
+        function pushTri(xA, yA, zA, xB, yB, zB, xC, yC, zC, col) {
+          positions.push(xA, yA, zA, xB, yB, zB, xC, yC, zC);
+          colors.push(col.r, col.g, col.b, col.r, col.g, col.b, col.r, col.g, col.b);
+        }
+
+        pushTri(ox0, y0, oz0, ox1, y0, oz1, ox1, y1, oz1, colMain);
+        pushTri(ox0, y0, oz0, ox1, y1, oz1, ox0, y1, oz0, colMain);
+        pushTri(ix1, y0, iz1, ix0, y0, iz0, ix0, y1, iz0, colMain);
+        pushTri(ix1, y0, iz1, ix0, y1, iz0, ix1, y1, iz1, colMain);
+        pushTri(ox0, y1, oz0, ox1, y1, oz1, ix1, y1, iz1, colTop);
+        pushTri(ox0, y1, oz0, ix1, y1, iz1, ix0, y1, iz0, colTop);
+        pushTri(cx, y0, cz, ox1, y0, oz1, ox0, y0, oz0, colMain);
+        pushTri(cx, y0 + 2.2, cz, ix0, y0 + 2.2, iz0, ix1, y0 + 2.2, iz1, colMain);
+      }
+    }
+
+    function buildOrganizerGeometry(p) {
+      const W = p.snapGridfinity ? Math.max(42, Math.round(p.totalWidth / 42) * 42) : p.totalWidth;
+      const D = p.snapGridfinity ? Math.max(42, Math.round(p.totalDepth / 42) * 42) : p.totalDepth;
+
+      const colBody = new THREE.Color(p.colorBody);
+      const colAccent = p.twoToneRim ? new THREE.Color(p.colorAccent) : colBody;
+      const colInterior = colBody.clone().lerp(colAccent, 0.22);
+
+      const nx = Math.min(150, Math.max(84, Math.round(W * 0.85)));
+      const nz = Math.min(130, Math.max(76, Math.round(D * 0.85)));
+
+      const halfW = W * 0.5;
+      const halfD = D * 0.5;
+      const wallT = p.wallThickness;
+      const divT = p.dividerThick;
+      const floorT = p.floorThickness;
+
+      const mediaDeckDepth = p.enableMediaDeck ? Math.min(30, D * 0.28) : 0;
+      const phoneDockDepth = p.enablePhoneDock ? Math.min(34, D * 0.28) : 0;
+      const frontDeckTotalZ = mediaDeckDepth + phoneDockDepth;
+
+      const deckSlots = [];
+      if (p.enableMediaDeck) {
+        const zCenterMedia = halfD - wallT - mediaDeckDepth * 0.5;
+        let curX = -halfW + wallT + 6;
+        for (let i = 0; i < p.sdCardSlots; i++) {
+          if (curX + 25 < halfW - wallT - 4) {
+            deckSlots.push({ x0: curX, x1: curX + 25.0, z0: zCenterMedia - 4.5, z1: zCenterMedia - 1.9, depth: 14.5 });
+            curX += 28.0;
+          }
+        }
+        for (let i = 0; i < p.usbASlots; i++) {
+          if (curX + 13 < halfW - wallT - 4) {
+            deckSlots.push({ x0: curX, x1: curX + 12.8, z0: zCenterMedia - 5.5, z1: zCenterMedia - 0.5, depth: 14.0 });
+            curX += 16.2;
+          }
+        }
+
+        curX = -halfW + wallT + 6;
+        for (let i = 0; i < p.microSdSlots; i++) {
+          if (curX + 12.5 < halfW - wallT - 4) {
+            deckSlots.push({ x0: curX, x1: curX + 12.5, z0: zCenterMedia + 2.2, z1: zCenterMedia + 3.9, depth: 10.0 });
+            curX += 15.2;
+          }
+        }
+        for (let i = 0; i < p.usbCSlots; i++) {
+          if (curX + 9.5 < halfW - wallT - 4) {
+            deckSlots.push({ x0: curX, x1: curX + 9.2, z0: zCenterMedia + 1.8, z1: zCenterMedia + 5.0, depth: 11.5 });
+            curX += 12.5;
+          }
+        }
+      }
+
+      if (p.bizCardSlot) {
+        const bz = halfD - wallT - 4.5;
+        const bw = Math.min(94, W - 2 * wallT - 12);
+        deckSlots.push({ x0: -bw * 0.5, x1: bw * 0.5, z0: bz - 1.6, z1: bz + 1.6, depth: 11.0 });
+      }
+
+      function sdRoundedBox2D(x, z, hx, hz, r) {
+        const qx = Math.abs(x) - hx + r;
+        const qz = Math.abs(z) - hz + r;
+        return Math.hypot(Math.max(qx, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qz), 0) - r;
+      }
+
+      function sampleColumnHeights(x, z) {
+        const outerEnvelopeH = evaluateTopHeightAtZ(z, D, p);
+
+        const cavityZMax = halfD - wallT - frontDeckTotalZ;
+        const cavityZMin = -halfD + wallT;
+        const cavityXMax = halfW - wallT;
+        const cavityXMin = -halfW + wallT;
+
+        let yTop = outerEnvelopeH;
+        let isRim = true;
+
+        if (x > cavityXMin && x < cavityXMax && z > cavityZMin && z < cavityZMax) {
+          const spanX = cavityXMax - cavityXMin;
+          const spanZ = cavityZMax - cavityZMin;
+
+          const relX = (x - cavityXMin) / spanX;
+          const relZ = (z - cavityZMin) / spanZ;
+
+          const rows = Math.max(1, p.rowsZ);
+          const rowFloat = relZ * rows;
+          const rIdx = Math.min(rows - 1, Math.floor(rowFloat));
+          const rFrac = rowFloat - rIdx;
+          const rowCellZ = spanZ / rows;
+          const distToRowWall = Math.min(rFrac * rowCellZ, (1 - rFrac) * rowCellZ);
+
+          const cols = (p.mergeFrontRow && rIdx === rows - 1) ? 1 : Math.max(1, p.colsX);
+          const colFloat = relX * cols;
+          const cIdx = Math.min(cols - 1, Math.floor(colFloat));
+          const cFrac = colFloat - cIdx;
+          const colCellX = spanX / cols;
+          const distToColWall = Math.min(cFrac * colCellX, (1 - cFrac) * colCellX);
+
+          const onRowDivider = (rIdx > 0 && rFrac * rowCellZ < divT * 0.5) || (rIdx < rows - 1 && (1 - rFrac) * rowCellZ < divT * 0.5);
+          const onColDivider = (cIdx > 0 && cFrac * colCellX < divT * 0.5) || (cIdx < cols - 1 && (1 - cFrac) * colCellX < divT * 0.5);
+
+          if (!onRowDivider && !onColDivider) {
+            isRim = false;
+            let bayFloor = floorT;
+
+            if (p.bottomScoopFillet > 0) {
+              const dEdge = Math.min(distToRowWall, distToColWall);
+              if (dEdge < p.bottomScoopFillet) {
+                const df = p.bottomScoopFillet - dEdge;
+                bayFloor += p.bottomScoopFillet - Math.sqrt(Math.max(0, p.bottomScoopFillet * p.bottomScoopFillet - df * df));
+              }
+            }
+            yTop = bayFloor;
+          }
+        }
+
+        if (p.frontThumbScoop && z > halfD - wallT - 14) {
+          const scoopHalfW = (W * p.scoopWidthFrac) * 0.5;
+          if (Math.abs(x) < scoopHalfW) {
+            const normX = Math.abs(x) / scoopHalfW;
+            const uProfile = Math.cos(normX * Math.PI * 0.5);
+            const cutFloor = floorT + (p.frontHeight - floorT) * (1.0 - p.scoopDepthFrac * uProfile);
+            yTop = Math.min(yTop, cutFloor);
+            isRim = false;
+          }
+        }
+
+        if (p.enablePhoneDock) {
+          const zDockCenter = halfD - wallT - mediaDeckDepth - phoneDockDepth * 0.5;
+          const halfDockW = Math.min(halfW - wallT - 3, p.dockWidth * 0.5);
+          const halfDockT = p.dockThickness * 0.5;
+
+          if (Math.abs(x) <= halfDockW && Math.abs(z - zDockCenter) <= halfDockT) {
+            const dockFloor = floorT + 5.5;
+            const tiltOffset = (z - (zDockCenter - halfDockT)) * Math.tan((p.dockTiltAngle * Math.PI) / 180) * 0.35;
+            yTop = Math.min(yTop, dockFloor + tiltOffset);
+            isRim = false;
+
+            if (p.chargingPass && Math.abs(x) <= p.cableSlotWidth * 0.5) {
+              yTop = Math.min(yTop, floorT + 1.8);
+            }
+          }
+        }
+
+        for (let s = 0; s < deckSlots.length; s++) {
+          const sl = deckSlots[s];
+          if (x >= sl.x0 && x <= sl.x1 && z >= sl.z0 && z <= sl.z1) {
+            yTop = Math.min(yTop, Math.max(floorT + 1.2, outerEnvelopeH - sl.depth));
+            isRim = false;
+            break;
+          }
+        }
+
+        let yBot = 0;
+
+        if (p.enablePhoneDock && p.chargingPass) {
+          const zDockCenter = halfD - wallT - mediaDeckDepth - phoneDockDepth * 0.5;
+          const tunnelHalfW = p.cableSlotWidth * 0.5 + 1.5;
+          if (Math.abs(x) < tunnelHalfW && z >= zDockCenter - 5) {
+            const roofH = Math.max(0, 4.2 - Math.abs(x) * 0.45);
+            yBot = Math.max(yBot, Math.min(floorT - 0.8, roofH));
+          }
+        }
+
+        if (p.baseStyle === 'gridfinity-42mm') {
+          const gx = ((x + halfW) % 42 + 42) % 42 - 21;
+          const gz = ((z + halfD) % 42 + 42) % 42 - 21;
+          const dCell = sdRoundedBox2D(gx, gz, 21, 21, 3.8);
+          if (dCell > -3.2) {
+            yBot = Math.max(yBot, Math.min(floorT * 0.7, (dCell + 3.2) * 0.85));
+          }
+        } else if (p.baseStyle === 'silicone-bumper-wells') {
+          const inset = 14;
+          const rPad = p.bumperDia * 0.5;
+          const corners = [
+            [-halfW + inset, -halfD + inset],
+            [+halfW - inset, -halfD + inset],
+            [-halfW + inset, +halfD - inset],
+            [+halfW - inset, +halfD - inset]
+          ];
+          for (let c = 0; c < 4; c++) {
+            if (Math.hypot(x - corners[c][0], z - corners[c][1]) <= rPad) {
+              yBot = Math.max(yBot, 1.4);
+            }
+          }
+        }
+
+        return { yTop: Math.max(yBot + 0.8, yTop), yBot, isRim };
+      }
+
+      const grid = [];
+      const rCorner = Math.min(p.cornerRadius, Math.min(halfW, halfD) * 0.45);
+
+      for (let iz = 0; iz <= nz; iz++) {
+        const row = [];
+        const vFrac = iz / nz;
+        const zRaw = -halfD + vFrac * D;
+
+        for (let ix = 0; ix <= nx; ix++) {
+          const uFrac = ix / nx;
+          const xRaw = -halfW + uFrac * W;
+
+          let x = xRaw;
+          let z = zRaw;
+          const qx = Math.abs(x) - (halfW - rCorner);
+          const qz = Math.abs(z) - (halfD - rCorner);
+          if (qx > 0 && qz > 0) {
+            const cornerLen = Math.hypot(qx, qz);
+            if (cornerLen > rCorner) {
+              const scale = rCorner / cornerLen;
+              x = Math.sign(x) * (halfW - rCorner + qx * scale);
+              z = Math.sign(z) * (halfD - rCorner + qz * scale);
+            }
+          }
+
+          const h = sampleColumnHeights(x, z);
+          row.push({ x, z, yTop: h.yTop, yBot: h.yBot, isRim: h.isRim });
+        }
+        grid.push(row);
+      }
+
+      const positions = [];
+      const colors = [];
+
+      function pushVertex(x, y, z, col) {
+        positions.push(x, y, z);
+        colors.push(col.r, col.g, col.b);
+      }
+
+      function pushQuad(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, col) {
+        pushVertex(ax, ay, az, col);
+        pushVertex(bx, by, bz, col);
+        pushVertex(cx, cy, cz, col);
+        pushVertex(ax, ay, az, col);
+        pushVertex(cx, cy, cz, col);
+        pushVertex(dx, dy, dz, col);
+      }
+
+      for (let iz = 0; iz < nz; iz++) {
+        for (let ix = 0; ix < nx; ix++) {
+          const p00 = grid[iz][ix];
+          const p10 = grid[iz][ix + 1];
+          const p11 = grid[iz + 1][ix + 1];
+          const p01 = grid[iz + 1][ix];
+
+          const maxDiff = Math.max(
+            Math.abs(p00.yTop - p10.yTop),
+            Math.abs(p10.yTop - p11.yTop),
+            Math.abs(p11.yTop - p01.yTop),
+            Math.abs(p01.yTop - p00.yTop)
+          );
+
+          const isTopRim = (p00.isRim && p10.isRim && p11.isRim && p01.isRim);
+          const colT = isTopRim ? colAccent : (maxDiff > 3.0 ? colBody : colInterior);
+
+          pushQuad(
+            p00.x, p00.yTop, p00.z,
+            p01.x, p01.yTop, p01.z,
+            p11.x, p11.yTop, p11.z,
+            p10.x, p10.yTop, p10.z,
+            colT
+          );
+
+          pushQuad(
+            p00.x, p00.yBot, p00.z,
+            p10.x, p10.yBot, p10.z,
+            p11.x, p11.yBot, p11.z,
+            p01.x, p01.yBot, p01.z,
+            colBody
+          );
+        }
+      }
+
+      const chamf = p.elephantChamfer;
+      function stitchPerimeterEdge(ptA, ptB) {
+        const yBotA = ptA.yBot + chamf;
+        const yBotB = ptB.yBot + chamf;
+        pushQuad(
+          ptA.x, yBotA, ptA.z,
+          ptB.x, yBotB, ptB.z,
+          ptB.x, ptB.yTop, ptB.z,
+          ptA.x, ptA.yTop, ptA.z,
+          colBody
+        );
+        if (chamf > 0.01) {
+          const shrinkA = 1.0 - chamf / Math.max(10, Math.hypot(ptA.x, ptA.z));
+          const shrinkB = 1.0 - chamf / Math.max(10, Math.hypot(ptB.x, ptB.z));
+          pushQuad(
+            ptA.x * shrinkA, ptA.yBot, ptA.z * shrinkA,
+            ptB.x * shrinkB, ptB.yBot, ptB.z * shrinkB,
+            ptB.x, yBotB, ptB.z,
+            ptA.x, yBotA, ptA.z,
+            colBody
+          );
+        }
+      }
+
+      for (let ix = 0; ix < nx; ix++) stitchPerimeterEdge(grid[nz][ix], grid[nz][ix + 1]);
+      for (let iz = nz; iz > 0; iz--) stitchPerimeterEdge(grid[iz][nx], grid[iz - 1][nx]);
+      for (let ix = nx; ix > 0; ix--) stitchPerimeterEdge(grid[0][ix], grid[0][ix - 1]);
+      for (let iz = 0; iz < nz; iz++) stitchPerimeterEdge(grid[iz][0], grid[iz + 1][0]);
+
+      // In 'assembled' mode, side wings are attached directly to the side walls.
+      // In 'print-plate' mode, detachable side accessories are laid flat on the Y=0 plane beside the main body (+20mm gap) with NO extra plate object!
+      const isPlate = (layoutMode === 'print-plate');
+
+      if (p.enableCableComb) {
+        const claws = p.cableCombClawCount;
+        const gap = p.cableGapDia;
+        const tineW = 4.2;
+        const combDepth = claws * gap + (claws + 1) * tineW;
+        const combX0 = isPlate ? (halfW + 20.0) : (halfW - 0.8);
+        const combX1 = combX0 + 14.3;
+        const combY0 = isPlate ? 0 : Math.min(22, p.frontHeight * 0.45);
+        const combY1 = combY0 + 8.5;
+        const zStart = -combDepth * 0.5;
+
+        appendSolidBlock(positions, colors, combX0, combX0 + 4.2, combY0, combY1, zStart, zStart + combDepth, colBody, colAccent);
+
+        for (let c = 0; c <= claws; c++) {
+          const tz0 = zStart + c * (tineW + gap);
+          const tz1 = tz0 + tineW;
+          appendSolidBlock(positions, colors, combX0 + 3.8, combX1, combY0, combY1, tz0, tz1, colBody, colAccent);
+          if (c < claws) {
+            appendSolidBlock(positions, colors, combX1 - 2.2, combX1, combY0, combY1, tz1, tz1 + 0.9, colBody, colAccent);
+          }
+        }
+      }
+
+      if (p.enableSidePenLoops) {
+        const rIn = p.penLoopDia * 0.5;
+        const cylWall = 2.4;
+        const cx = isPlate ? (-halfW - rIn - cylWall - 20.0) : (-halfW - rIn - cylWall * 0.5 + 1.2);
+        const loopH = Math.min(58, p.rearHeight * 0.72);
+        appendHollowCylinder(positions, colors, cx, -14, 0, loopH, rIn, cylWall, colBody, colAccent);
+        appendHollowCylinder(positions, colors, cx, +14, 0, loopH * 0.82, rIn, cylWall, colBody, colAccent);
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geo.computeVertexNormals();
+      return { geo, actualW: W, actualD: D };
+    }
+
+    // ============================================================================
+    // 5. REFERENCE DESK ITEMS GENERATOR
+    // ============================================================================
+    function buildReferenceProps(p, W, D) {
+      while (propsGroup.children.length > 0) {
+        const ch = propsGroup.children.pop();
+        if (ch.geometry) ch.geometry.dispose();
+        if (ch.material) {
+          if (Array.isArray(ch.material)) ch.material.forEach(m => m.dispose());
+          else ch.material.dispose();
+        }
+      }
+
+      // Hide desk reference props automatically in Print Plate mode or when toggled off
+      if (!p.showProps || layoutMode === 'print-plate') return;
+
+      const insertFrac = parseFloat(document.getElementById('props-slider').value) / 100;
+      const liftY = (1.0 - insertFrac) * 65;
+
+      const halfW = W * 0.5;
+      const halfD = D * 0.5;
+      const mediaDeckDepth = p.enableMediaDeck ? Math.min(30, D * 0.28) : 0;
+      const phoneDockDepth = p.enablePhoneDock ? Math.min(34, D * 0.28) : 0;
+      const cavityZMax = halfD - p.wallThickness - mediaDeckDepth - phoneDockDepth;
+      const cavityZMin = -halfD + p.wallThickness;
+
+      // 1. Smartphone or Tablet in Dock
+      if (p.enablePhoneDock && PROP_ITEMS.device) {
+        const zDock = halfD - p.wallThickness - mediaDeckDepth - phoneDockDepth * 0.5;
+        const isTablet = p.dockWidth >= 130;
+        const devW = Math.min(isTablet ? 155 : 74, p.dockWidth - 4);
+        const devH = isTablet ? 195 : 146;
+        const phoneGeo = new THREE.BoxGeometry(devW, devH, 8.2);
+        const phoneMat = new THREE.MeshPhysicalMaterial({
+          color: isTablet ? 0x2b303c : 0x161b22,
+          roughness: 0.18,
+          metalness: 0.55,
+          clearcoat: 0.85,
+          transparent: true,
+          opacity: 0.90
+        });
+        const phoneMesh = new THREE.Mesh(phoneGeo, phoneMat);
+        phoneMesh.position.set(0, p.floorThickness + devH * 0.52 + liftY, zDock - 2);
+        phoneMesh.rotation.x = -(p.dockTiltAngle * Math.PI) / 180;
+        propsGroup.add(phoneMesh);
+      }
+
+      // 2. Pencils, Pens, Highlighters & Side Markers
+      if (PROP_ITEMS.pens && cavityZMax - cavityZMin > 18) {
+        const rearZ = cavityZMin + (cavityZMax - cavityZMin) * 0.18;
+        const penGeo = new THREE.CylinderGeometry(4.6, 4.0, 138, 20);
+        const pencilGeo = new THREE.CylinderGeometry(3.8, 3.8, 148, 6); // Hexagonal pencil
+        const penMat1 = new THREE.MeshStandardMaterial({ color: 0xe05a47, roughness: 0.35 });
+        const penMat2 = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.35 });
+        const pencilMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.45 });
+
+        const pen1 = new THREE.Mesh(penGeo, penMat1);
+        pen1.position.set(-W * 0.22, p.floorThickness + 70 + liftY, rearZ);
+        pen1.rotation.z = 0.06;
+        propsGroup.add(pen1);
+
+        const pen2 = new THREE.Mesh(penGeo, penMat2);
+        pen2.position.set(0, p.floorThickness + 68 + liftY, rearZ + 3);
+        pen2.rotation.z = -0.05;
+        propsGroup.add(pen2);
+
+        const pencil = new THREE.Mesh(pencilGeo, pencilMat);
+        pencil.position.set(W * 0.22, p.floorThickness + 74 + liftY, rearZ - 1);
+        pencil.rotation.z = 0.04;
+        propsGroup.add(pencil);
+
+        // Side Marker Holster prop if enabled
+        if (p.enableSidePenLoops) {
+          const rIn = p.penLoopDia * 0.5;
+          const cx = -halfW - rIn - 2.4 * 0.5 + 1.2;
+          const markerGeo = new THREE.CylinderGeometry(rIn * 0.78, rIn * 0.72, 122, 20);
+          const markerMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.3 });
+          const marker = new THREE.Mesh(markerGeo, markerMat);
+          marker.position.set(cx, 62 + liftY, -14);
+          propsGroup.add(marker);
+        }
+      }
+
+      // 3. SD Cards & USB Flash Drives on Media Deck
+      if (PROP_ITEMS.media && p.enableMediaDeck) {
+        const zCenterMedia = halfD - p.wallThickness - mediaDeckDepth * 0.5;
+        let curX = -halfW + p.wallThickness + 6;
+
+        if (p.sdCardSlots > 0) {
+          const sdGeo = new THREE.BoxGeometry(24, 32, 2.1);
+          const sdMat = new THREE.MeshStandardMaterial({ color: 0x2ea89c, roughness: 0.4 });
+          for (let i = 0; i < Math.min(2, p.sdCardSlots); i++) {
+            if (curX + 25 < halfW - p.wallThickness - 4) {
+              const sd = new THREE.Mesh(sdGeo, sdMat);
+              sd.position.set(curX + 12.5, p.frontHeight + 4 + liftY * 0.6, zCenterMedia - 3.2);
+              propsGroup.add(sd);
+              curX += 28.0;
+            }
+          }
+        }
+
+        if (p.usbASlots > 0) {
+          const usbGeo = new THREE.BoxGeometry(12.0, 38, 4.5);
+          const usbMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.3 });
+          if (curX + 13 < halfW - p.wallThickness - 4) {
+            const usb = new THREE.Mesh(usbGeo, usbMat);
+            usb.position.set(curX + 6.4, p.frontHeight + 8 + liftY * 0.6, zCenterMedia - 3.0);
+            propsGroup.add(usb);
+          }
+        }
+      }
+
+      // 4. Sticky Note Pad & Business Cards
+      if (PROP_ITEMS.notes) {
+        if (p.bizCardSlot) {
+          const bz = halfD - p.wallThickness - 4.5;
+          const cardW = Math.min(88, W - 2 * p.wallThickness - 16);
+          const cardGeo = new THREE.BoxGeometry(cardW, 50, 0.9);
+          const cardMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
+          const cardMesh = new THREE.Mesh(cardGeo, cardMat);
+          cardMesh.position.set(0, p.frontHeight + 14 + liftY * 0.5, bz);
+          propsGroup.add(cardMesh);
+        }
+
+        if (p.frontThumbScoop && (cavityZMax - cavityZMin) > 36) {
+          const padW = Math.min(74, (W - 2 * p.wallThickness) / Math.max(1, p.mergeFrontRow ? 1 : p.colsX) - 6);
+          const padD = Math.min(74, (cavityZMax - cavityZMin) / Math.max(1, p.rowsZ) - 6);
+          if (padW > 32 && padD > 28) {
+            const noteGeo = new THREE.BoxGeometry(padW, 12, padD);
+            const noteMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.55 });
+            const noteMesh = new THREE.Mesh(noteGeo, noteMat);
+            const frontBayZ = cavityZMax - padD * 0.5 - 3;
+            noteMesh.position.set(0, p.floorThickness + 6.5 + liftY * 0.4, frontBayZ);
+            propsGroup.add(noteMesh);
+          }
+        }
+      }
+    }
+
+    // ============================================================================
+    // 6. SCENE UPDATE & ENGINEERING HUD TELEMETRY
+    // ============================================================================
+    let currentOrganizerGeometry = null;
+
+    function computeMeshVolumeCm3(bufferGeo) {
+      const pos = bufferGeo.attributes.position.array;
+      let volMm3 = 0;
+      for (let i = 0; i < pos.length; i += 9) {
+        const ax = pos[i], ay = pos[i + 1], az = pos[i + 2];
+        const bx = pos[i + 3], by = pos[i + 4], bz = pos[i + 5];
+        const cx = pos[i + 6], cy = pos[i + 7], cz = pos[i + 8];
+        volMm3 += (ax * (by * cz - bz * cy) + bx * (cy * az - cz * ay) + cx * (ay * bz - az * by)) / 6.0;
+      }
+      return Math.abs(volMm3) / 1000.0;
+    }
+
+    function updateScene() {
+      const t0 = performance.now();
+
+      while (organizerGroup.children.length > 0) {
+        const ch = organizerGroup.children.pop();
+        if (ch.geometry) ch.geometry.dispose();
+        if (ch.material) ch.material.dispose();
+      }
+
+      if (gridHelper) gridHelper.visible = STATE.showGrid;
+      controls.autoRotate = STATE.autoRotate;
+
+      const activeClips = [];
+      if (cutMode === 'x') {
+        clipPlaneX.constant = (cutFrac - 0.5) * STATE.totalWidth;
+        activeClips.push(clipPlaneX);
+      } else if (cutMode === 'z') {
+        clipPlaneZ.constant = (cutFrac - 0.5) * STATE.totalDepth;
+        activeClips.push(clipPlaneZ);
+      }
+
+      const { geo, actualW, actualD } = buildOrganizerGeometry(STATE);
+      currentOrganizerGeometry = geo;
+
+      const mat = new THREE.MeshPhysicalMaterial({
+        vertexColors: true,
+        roughness: STATE.roughness,
+        metalness: STATE.metalness,
+        clearcoat: 0.12,
+        wireframe: STATE.wireframe,
+        side: THREE.DoubleSide,
+        clippingPlanes: activeClips
+      });
+
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      organizerGroup.add(mesh);
+
+      buildReferenceProps(STATE, actualW, actualD);
+
+      const elapsed = Math.round(performance.now() - t0);
+      updateHUD(geo, actualW, actualD, elapsed);
+    }
+
+    function updateHUD(geo, W, D, ms) {
+      document.getElementById('hud-ms').textContent = `${ms} ms`;
+      document.getElementById('hud-dims').textContent = `${W} × ${D} × ${STATE.rearHeight} mm`;
+
+      const gx = (W / 42).toFixed(1);
+      const gz = (D / 42).toFixed(1);
+      document.getElementById('hud-gridf').textContent = `${gx}u × ${gz}u (42mm pitch)`;
+
+      const bayCount = STATE.mergeFrontRow && STATE.rowsZ > 1
+        ? (STATE.rowsZ - 1) * STATE.colsX + 1
+        : STATE.rowsZ * STATE.colsX;
+      document.getElementById('hud-bays').textContent = `${bayCount} Bays (${STATE.colsX}×${STATE.rowsZ})`;
+
+      const totalMedia = STATE.enableMediaDeck
+        ? (STATE.sdCardSlots + STATE.microSdSlots + STATE.usbASlots + STATE.usbCSlots)
+        : 0;
+      document.getElementById('hud-slots').textContent = `${totalMedia} Media + ${STATE.enablePhoneDock ? '1 Dock' : '0 Dock'}`;
+
+      const volCm3 = computeMeshVolumeCm3(geo);
+      document.getElementById('hud-vol').textContent = `${volCm3.toFixed(1)} cm³`;
+
+      const rhoMap = {
+        'Matte PLA (1.24 g/cm³)': 1.24,
+        'PETG (1.27 g/cm³)': 1.27,
+        'ABS / ASA (1.04 g/cm³)': 1.04,
+        'Wood/CF PLA (1.18 g/cm³)': 1.18
+      };
+      const rho = rhoMap[STATE.filamentType] || 1.24;
+      const estMass = volCm3 * rho * 0.62;
+      document.getElementById('hud-mass').textContent = `~${estMass.toFixed(0)} g (${STATE.filamentType.split(' ')[0]})`;
+
+      const tipEl = document.getElementById('hud-tip');
+      if (layoutMode === 'print-plate') {
+        tipEl.textContent = `🖨️ PRINT PLATE MODE: All printable parts laid flat on Y=0 (+20mm gap, no extra base plate). Ready for .STL export.`;
+      } else {
+        tipEl.textContent = `✓ ASSEMBLED MODE: All cable tunnels & base recesses use 45° support-free printability chamfers.`;
+      }
+    }
+
+    // ============================================================================
+    // 7. DYNAMIC UI GENERATION & 53+ PRESET LIBRARY MODAL ENGINE
+    // ============================================================================
+    const schemaContainer = document.getElementById('schema-container');
+    const controlRefs = {};
+
+    SCHEMA.forEach(group => {
+      const grpEl = document.createElement('div');
+      grpEl.className = 'param-group' + (group.open ? ' open' : '');
+
+      const hdr = document.createElement('button');
+      hdr.className = 'group-header';
+      hdr.innerHTML = `<span>${group.title}</span><span class="group-chevron">▶</span>`;
+      hdr.addEventListener('click', () => grpEl.classList.toggle('open'));
+
+      const body = document.createElement('div');
+      body.className = 'group-body';
+
+      group.params.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'ctrl-row' + (p.type === 'check' ? ' inline-check' : '');
+
+        if (p.type === 'range') {
+          const unitStr = p.unit ? ` ${p.unit}` : '';
+          row.innerHTML = `
+            <div class="ctrl-top">
+              <span>${p.label}</span>
+              <span class="ctrl-val" id="val-${p.key}">${STATE[p.key]}${unitStr}</span>
+            </div>
+            <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${STATE[p.key]}" />
+          `;
+          const inp = row.querySelector('input');
+          const valSpan = row.querySelector(`#val-${p.key}`);
+          inp.addEventListener('input', () => {
+            STATE[p.key] = parseFloat(inp.value);
+            valSpan.textContent = `${STATE[p.key]}${unitStr}`;
+            updateScene();
+          });
+          controlRefs[p.key] = { inp, valSpan, unitStr, type: p.type };
+        } else if (p.type === 'select') {
+          row.innerHTML = `
+            <div class="ctrl-top"><span>${p.label}</span></div>
+            <select>${p.options.map(o => `<option value="${o}" ${o === STATE[p.key] ? 'selected' : ''}>${o}</option>`).join('')}</select>
+          `;
+          const sel = row.querySelector('select');
+          sel.addEventListener('change', () => {
+            STATE[p.key] = sel.value;
+            updateScene();
+          });
+          controlRefs[p.key] = { inp: sel, type: p.type };
+        } else if (p.type === 'check') {
+          row.innerHTML = `
+            <span style="font-size:0.78rem">${p.label}</span>
+            <input type="checkbox" ${STATE[p.key] ? 'checked' : ''} />
+          `;
+          const chk = row.querySelector('input');
+          chk.addEventListener('change', () => {
+            STATE[p.key] = chk.checked;
+            if (p.key === 'showGrid') {
+              document.getElementById('btn-toggle-grid').classList.toggle('active', STATE.showGrid);
+            }
+            if (p.key === 'showProps') {
+              document.getElementById('btn-props').classList.toggle('active', STATE.showProps);
+            }
+            updateScene();
+          });
+          controlRefs[p.key] = { inp: chk, type: p.type };
+        } else if (p.type === 'color') {
+          row.className = 'ctrl-row inline-check';
+          row.innerHTML = `
+            <span style="font-size:0.78rem">${p.label}</span>
+            <input type="color" value="${STATE[p.key]}" />
+          `;
+          const col = row.querySelector('input');
+          col.addEventListener('input', () => {
+            STATE[p.key] = col.value;
+            updateScene();
+          });
+          controlRefs[p.key] = { inp: col, type: p.type };
+        }
+
+        body.appendChild(row);
+      });
+
+      grpEl.appendChild(hdr);
+      grpEl.appendChild(body);
+      schemaContainer.appendChild(grpEl);
+    });
+
+    function syncUIFromState() {
+      Object.keys(controlRefs).forEach(k => {
+        const ref = controlRefs[k];
+        if (ref.type === 'range') {
+          ref.inp.value = STATE[k];
+          ref.valSpan.textContent = `${STATE[k]}${ref.unitStr}`;
+        } else if (ref.type === 'select' || ref.type === 'color') {
+          ref.inp.value = STATE[k];
+        } else if (ref.type === 'check') {
+          ref.inp.checked = Boolean(STATE[k]);
+        }
+      });
+      document.getElementById('btn-toggle-grid').classList.toggle('active', Boolean(STATE.showGrid));
+      document.getElementById('btn-props').classList.toggle('active', Boolean(STATE.showProps));
+
+      const btnAsmProps = document.getElementById('btn-assembled-props');
+      if (btnAsmProps) {
+        btnAsmProps.classList.toggle('active', Boolean(STATE.showProps));
+        btnAsmProps.textContent = STATE.showProps ? '✏️📱 Isi Wadah: ON' : '✏️📱 Isi Wadah: OFF';
+        btnAsmProps.style.display = layoutMode === 'print-plate' ? 'none' : 'inline-flex';
+      }
+
+      const btnFloaterToggle = document.getElementById('btn-floater-props-toggle');
+      if (btnFloaterToggle) {
+        btnFloaterToggle.classList.toggle('active', Boolean(STATE.showProps));
+        btnFloaterToggle.textContent = STATE.showProps ? 'ON' : 'OFF';
+      }
+
+      // Sync Top-Right Quick Color Bar
+      const qBody = document.getElementById('quick-color-body');
+      const qAccent = document.getElementById('quick-color-accent');
+      const qTwoTone = document.getElementById('quick-twotone-btn');
+      if (qBody) qBody.value = STATE.colorBody;
+      if (qAccent) qAccent.value = STATE.colorAccent;
+      if (qTwoTone) qTwoTone.classList.toggle('active', Boolean(STATE.twoToneRim));
+
+      document.querySelectorAll('.qswatch-btn').forEach(btn => {
+        const match = btn.dataset.body.toLowerCase() === String(STATE.colorBody).toLowerCase() &&
+                      btn.dataset.accent.toLowerCase() === String(STATE.colorAccent).toLowerCase();
+        btn.classList.toggle('active', match);
+      });
+    }
+
+    // Initialize Top-Right Quick Color Shortcut Menu
+    const qSwatchList = document.getElementById('qswatch-list');
+    QUICK_PALETTES.forEach(pal => {
+      const btn = document.createElement('button');
+      btn.className = 'qswatch-btn';
+      btn.title = pal.name;
+      btn.dataset.body = pal.body;
+      btn.dataset.accent = pal.accent;
+      btn.style.background = `linear-gradient(135deg, ${pal.body} 52%, ${pal.accent} 52%)`;
+      btn.addEventListener('click', () => {
+        STATE.colorBody = pal.body;
+        STATE.colorAccent = pal.accent;
+        STATE.twoToneRim = true;
+        syncUIFromState();
+        updateScene();
+      });
+      qSwatchList.appendChild(btn);
+    });
+
+    document.getElementById('quick-color-body').addEventListener('input', e => {
+      STATE.colorBody = e.target.value;
+      syncUIFromState();
+      updateScene();
+    });
+
+    document.getElementById('quick-color-accent').addEventListener('input', e => {
+      STATE.colorAccent = e.target.value;
+      STATE.twoToneRim = true;
+      syncUIFromState();
+      updateScene();
+    });
+
+    document.getElementById('quick-twotone-btn').addEventListener('click', () => {
+      STATE.twoToneRim = !STATE.twoToneRim;
+      syncUIFromState();
+      updateScene();
+    });
+
+    // Assembled vs. Print Plate Mode Toggle Buttons
+    document.querySelectorAll('[data-layout]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        layoutMode = btn.dataset.layout;
+        document.querySelectorAll('[data-layout]').forEach(b => {
+          b.classList.toggle('active', b.dataset.layout === layoutMode);
+        });
+        document.querySelector('.props-floater').style.display = layoutMode === 'print-plate' ? 'none' : 'block';
+        syncUIFromState();
+        updateScene();
+      });
+    });
+
+    // Show/Hide Sample Objects directly from Assembled Menu Bar, Floater & Chips
+    function toggleAllSampleObjects() {
+      STATE.showProps = !STATE.showProps;
+      syncUIFromState();
+      updateScene();
+    }
+
+    document.getElementById('btn-assembled-props').addEventListener('click', toggleAllSampleObjects);
+    document.getElementById('btn-floater-props-toggle').addEventListener('click', toggleAllSampleObjects);
+
+    document.querySelectorAll('[data-prop-item]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const key = chip.dataset.propItem;
+        PROP_ITEMS[key] = !PROP_ITEMS[key];
+        chip.classList.toggle('active', PROP_ITEMS[key]);
+        // Ensure master showProps is ON if user enables a chip
+        if (PROP_ITEMS[key] && !STATE.showProps) {
+          STATE.showProps = true;
+          syncUIFromState();
+        }
+        updateScene();
+      });
+    });
+
+    // Populate Sidebar Grouped Select Dropdown & Library Modal
+    const presetSelect = document.getElementById('preset-select');
+    const categories = ['All', ...new Set(PRESET_LIBRARY.map(p => p.category))];
+
+    categories.slice(1).forEach(cat => {
+      const optGroup = document.createElement('optgroup');
+      optGroup.label = `── ${cat} ──`;
+      PRESET_LIBRARY.forEach((item, idx) => {
+        if (item.category === cat) {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = `${idx + 1}. ${item.name}`;
+          optGroup.appendChild(opt);
+        }
+      });
+      presetSelect.appendChild(optGroup);
+    });
+
+    function applyPresetByIndex(idx) {
+      currentPresetIndex = (idx + PRESET_LIBRARY.length) % PRESET_LIBRARY.length;
+      const item = PRESET_LIBRARY[currentPresetIndex];
+      SCHEMA.forEach(g => g.params.forEach(p => { STATE[p.key] = p.default; }));
+      Object.assign(STATE, item.config);
+      presetSelect.value = currentPresetIndex;
+      document.getElementById('active-preset-index').textContent = `${currentPresetIndex + 1} / ${PRESET_LIBRARY.length}`;
+      syncUIFromState();
+      updateScene();
+      renderLibraryCards();
+    }
+
+    presetSelect.addEventListener('change', () => applyPresetByIndex(parseInt(presetSelect.value, 10)));
+    document.getElementById('btn-prev-preset').addEventListener('click', () => applyPresetByIndex(currentPresetIndex - 1));
+    document.getElementById('btn-next-preset').addEventListener('click', () => applyPresetByIndex(currentPresetIndex + 1));
+    document.getElementById('btn-random-preset').addEventListener('click', () => {
+      const rnd = Math.floor(Math.random() * PRESET_LIBRARY.length);
+      applyPresetByIndex(rnd);
+    });
+    document.getElementById('btn-reset').addEventListener('click', () => applyPresetByIndex(currentPresetIndex));
+
+    // Dedicated Preset Library Modal Logic
+    let activeLibCategory = 'All';
+    let activeSearchQuery = '';
+
+    const libBackdrop = document.getElementById('library-backdrop');
+    const libCatBar = document.getElementById('lib-cat-bar');
+    const libGrid = document.getElementById('lib-grid');
+    const libSearch = document.getElementById('lib-search');
+
+    function openPresetLibrary(initialCategory = null) {
+      if (initialCategory) activeLibCategory = initialCategory;
+      renderCategoryTabs();
+      renderLibraryCards();
+      libBackdrop.classList.add('open');
+      libSearch.focus();
+    }
+
+    function closePresetLibrary() {
+      libBackdrop.classList.remove('open');
+    }
+
+    document.getElementById('btn-open-lib-sidebar').addEventListener('click', () => openPresetLibrary());
+    document.getElementById('btn-open-lib-top').addEventListener('click', () => openPresetLibrary());
+    document.getElementById('btn-lib-close').addEventListener('click', closePresetLibrary);
+    libBackdrop.addEventListener('click', e => {
+      if (e.target === libBackdrop) closePresetLibrary();
+    });
+    document.getElementById('btn-lib-random').addEventListener('click', () => {
+      const rnd = Math.floor(Math.random() * PRESET_LIBRARY.length);
+      applyPresetByIndex(rnd);
+      closePresetLibrary();
+    });
+
+    function renderCategoryTabs() {
+      libCatBar.innerHTML = '';
+      categories.forEach(cat => {
+        const count = cat === 'All'
+          ? PRESET_LIBRARY.length
+          : PRESET_LIBRARY.filter(p => p.category === cat).length;
+        const btn = document.createElement('button');
+        btn.className = 'cat-tab' + (activeLibCategory === cat ? ' active' : '');
+        btn.textContent = `${cat} (${count})`;
+        btn.addEventListener('click', () => {
+          activeLibCategory = cat;
+          renderCategoryTabs();
+          renderLibraryCards();
+        });
+        libCatBar.appendChild(btn);
+      });
+    }
+
+    function renderLibraryCards() {
+      libGrid.innerHTML = '';
+      const q = activeSearchQuery.trim().toLowerCase();
+
+      const filtered = PRESET_LIBRARY.map((item, idx) => ({ item, idx })).filter(({ item }) => {
+        const matchCat = activeLibCategory === 'All' || item.category === activeLibCategory;
+        const matchSearch = !q ||
+          item.name.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q) ||
+          item.desc.toLowerCase().includes(q) ||
+          item.tags.some(t => t.toLowerCase().includes(q));
+        return matchCat && matchSearch;
+      });
+
+      document.getElementById('lib-count-badge').textContent = `${filtered.length} Presets`;
+
+      filtered.forEach(({ item, idx }) => {
+        const c = item.config;
+        const card = document.createElement('div');
+        card.className = 'preset-card' + (idx === currentPresetIndex ? ' selected' : '');
+        card.innerHTML = `
+          <div class="pcard-top">
+            <span class="pcard-cat">#${idx + 1} · ${item.category}</span>
+            <div class="pcard-swatches">
+              <span class="pcard-dot" style="background:${c.colorBody || '#2b3544'}"></span>
+              <span class="pcard-dot" style="background:${c.colorAccent || '#f0883e'}"></span>
+            </div>
+          </div>
+          <div class="pcard-name">${item.name}</div>
+          <div class="pcard-desc">${item.desc}</div>
+          <div class="pcard-tags">
+            ${item.tags.map(t => `<span class="pcard-tag">${t}</span>`).join('')}
+          </div>
+          <div class="pcard-meta">
+            <span>${c.totalWidth}×${c.totalDepth}×${c.rearHeight} mm</span>
+            <span>${c.colsX || 3}×${c.rowsZ || 2} Bays</span>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          applyPresetByIndex(idx);
+          closePresetLibrary();
+        });
+        libGrid.appendChild(card);
+      });
+    }
+
+    libSearch.addEventListener('input', e => {
+      activeSearchQuery = e.target.value;
+      renderLibraryCards();
+    });
+
+    // Top Quick Category Pills (Cycles through presets in that category)
+    document.querySelectorAll('[data-qcat]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-qcat]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const targetCat = btn.dataset.qcat;
+        const matchingIndices = PRESET_LIBRARY
+          .map((p, idx) => (p.category === targetCat ? idx : -1))
+          .filter(idx => idx !== -1);
+        if (matchingIndices.length > 0) {
+          const posInCat = matchingIndices.indexOf(currentPresetIndex);
+          const nextIdx = matchingIndices[(posInCat + 1) % matchingIndices.length];
+          applyPresetByIndex(nextIdx);
+        }
+      });
+    });
+
+    // Camera Views
+    document.querySelectorAll('[data-cam]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.cam;
+        const d = Math.max(STATE.totalWidth, STATE.totalDepth) * 1.65;
+        controls.target.set(0, STATE.rearHeight * 0.4, 0);
+        if (mode === 'iso') camera.position.set(d, d * 0.85, d);
+        if (mode === 'front') camera.position.set(0, STATE.rearHeight * 0.55, d * 1.45);
+        if (mode === 'top') camera.position.set(0, d * 1.7, 0.01);
+        if (mode === 'side') camera.position.set(d * 1.45, STATE.rearHeight * 0.55, 0);
+        controls.update();
+      });
+    });
+
+    // Show/Hide Reference Props & Grid
+    document.getElementById('btn-props').addEventListener('click', toggleAllSampleObjects);
+
+    document.getElementById('props-slider').addEventListener('input', e => {
+      document.getElementById('props-readout').textContent = `${e.target.value}%`;
+      updateScene();
+    });
+
+    document.getElementById('btn-toggle-grid').addEventListener('click', () => {
+      STATE.showGrid = !STATE.showGrid;
+      syncUIFromState();
+      updateScene();
+    });
+
+    // Cross-Section Cut
+    const btnSecX = document.getElementById('btn-sec-x');
+    const btnSecZ = document.getElementById('btn-sec-z');
+    const cutWrap = document.getElementById('cut-slider-wrap');
+
+    btnSecX.addEventListener('click', () => {
+      cutMode = cutMode === 'x' ? 'none' : 'x';
+      btnSecX.classList.toggle('active', cutMode === 'x');
+      btnSecZ.classList.remove('active');
+      cutWrap.style.display = cutMode === 'none' ? 'none' : 'block';
+      updateScene();
+    });
+
+    btnSecZ.addEventListener('click', () => {
+      cutMode = cutMode === 'z' ? 'none' : 'z';
+      btnSecZ.classList.toggle('active', cutMode === 'z');
+      btnSecX.classList.remove('active');
+      cutWrap.style.display = cutMode === 'none' ? 'none' : 'block';
+      updateScene();
+    });
+
+    document.getElementById('cut-slider').addEventListener('input', e => {
+      cutFrac = parseFloat(e.target.value) / 100;
+      document.getElementById('cut-readout').textContent = `${e.target.value}%`;
+      updateScene();
+    });
+
+    // Theme Toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const root = document.documentElement;
+      root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      rebuildGridHelper();
+    });
+
+    // ============================================================================
+    // 8. MANUFACTURING EXPORT SUITE (.STL, .OBJ, .GLB, .PNG, .JSON, .ZIP)
+    // ============================================================================
+    function getBaseFilename() {
+      const date = new Date().toISOString().slice(0, 10);
+      return `deskcraft-${STATE.totalWidth}x${STATE.totalDepth}mm-${date}`;
+    }
+
+    function downloadBlob(blob, filename) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+
+    function generateSTLBuffer() {
+      const exporter = new STLExporter();
+      const exportMesh = new THREE.Mesh(currentOrganizerGeometry.clone());
+      exportMesh.rotation.x = Math.PI / 2;
+      exportMesh.updateMatrixWorld(true);
+      const res = exporter.parse(exportMesh, { binary: true });
+      return new Uint8Array(res.buffer);
+    }
+
+    function generateOBJString() {
+      const exporter = new OBJExporter();
+      const exportMesh = new THREE.Mesh(currentOrganizerGeometry.clone());
+      return exporter.parse(exportMesh);
+    }
+
+    function generateSlicerSpecsTxt() {
+      const activePreset = PRESET_LIBRARY[currentPresetIndex];
+      return [
+        `===================================================================`,
+        ` DESKCRAFT STUDIO 3D — 3D PRINTING & SLICER SPECIFICATION`,
+        `===================================================================`,
+        `Active Preset      : ${activePreset ? activePreset.name : 'Custom'}`,
+        `Dimensions (W×D×H) : ${STATE.totalWidth} × ${STATE.totalDepth} × ${STATE.rearHeight} mm`,
+        `Tier Profile       : ${STATE.tierProfile} (Front: ${STATE.frontHeight} mm -> Rear: ${STATE.rearHeight} mm)`,
+        `Compartments       : ${STATE.colsX} Columns × ${STATE.rowsZ} Rows`,
+        `Phone Stand Dock   : ${STATE.enablePhoneDock ? `Active (${STATE.dockWidth}×${STATE.dockThickness} mm, ${STATE.dockTiltAngle}° tilt)` : 'Disabled'}`,
+        `Tech Media Deck    : ${STATE.enableMediaDeck ? `SD:${STATE.sdCardSlots}, MicroSD:${STATE.microSdSlots}, USB-A:${STATE.usbASlots}, USB-C:${STATE.usbCSlots}` : 'Disabled'}`,
+        ``,
+        `RECOMMENDED FDM SLICER SETTINGS:`,
+        `  - Layer Height        : 0.20 mm (or 0.16 mm for fine media slots)`,
+        `  - Wall Perimeters     : 3 loops`,
+        `  - Top / Bottom Shells : 4 layers`,
+        `  - Infill              : 12% - 15% Gyroid or Adaptive Cubic`,
+        `  - Supports            : NONE REQUIRED (100% support-free geometry)`,
+        `  - Color Change (M600) : Optional filament swap on top 2mm rim for two-tone accent.`
+      ].join('\n');
+    }
+
+    document.getElementById('exp-stl').addEventListener('click', () => {
+      downloadBlob(new Blob([generateSTLBuffer()], { type: 'application/octet-stream' }), `${getBaseFilename()}.stl`);
+    });
+
+    document.getElementById('exp-obj').addEventListener('click', () => {
+      downloadBlob(new Blob([generateOBJString()], { type: 'text/plain' }), `${getBaseFilename()}.obj`);
+    });
+
+    document.getElementById('exp-glb').addEventListener('click', () => {
+      const exporter = new GLTFExporter();
+      const mesh = new THREE.Mesh(currentOrganizerGeometry.clone(), new THREE.MeshStandardMaterial({ vertexColors: true }));
+      mesh.scale.setScalar(0.001);
+      mesh.updateMatrixWorld(true);
+      exporter.parse(mesh, glb => {
+        downloadBlob(new Blob([glb], { type: 'model/gltf-binary' }), `${getBaseFilename()}.glb`);
+      }, err => console.error(err), { binary: true });
+    });
+
+    document.getElementById('exp-png').addEventListener('click', () => {
+      const prevGrid = gridHelper ? gridHelper.visible : true;
+      if (gridHelper) gridHelper.visible = false;
+      renderer.setSize(2048, 2048, false);
+      camera.aspect = 1;
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera);
+      canvas.toBlob(blob => {
+        downloadBlob(blob, `${getBaseFilename()}.png`);
+        if (gridHelper) gridHelper.visible = prevGrid;
+        onResize();
+      }, 'image/png');
+    });
+
+    document.getElementById('exp-json').addEventListener('click', () => {
+      downloadBlob(new Blob([JSON.stringify(STATE, null, 2)], { type: 'application/json' }), `${getBaseFilename()}.json`);
+    });
+
+    const fileInp = document.getElementById('imp-json-file');
+    document.getElementById('imp-json-btn').addEventListener('click', () => fileInp.click());
+    fileInp.addEventListener('change', e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          Object.assign(STATE, JSON.parse(ev.target.result));
+          syncUIFromState();
+          updateScene();
+        } catch (err) {
+          console.error('Invalid JSON preset', err);
+        }
+      };
+      reader.readAsText(f);
+    });
+
+    document.getElementById('exp-zip').addEventListener('click', () => {
+      const base = getBaseFilename();
+      const files = {
+        [`${base}.stl`]: generateSTLBuffer(),
+        [`${base}.obj`]: strToU8(generateOBJString()),
+        [`${base}.json`]: strToU8(JSON.stringify(STATE, null, 2)),
+        [`SLICER_SPECS.txt`]: strToU8(generateSlicerSpecsTxt())
+      };
+      const zipped = zipSync(files, { level: 6 });
+      downloadBlob(new Blob([zipped], { type: 'application/zip' }), `${base}-bundle.zip`);
+    });
+
+    // ============================================================================
+    // 9. RESIZE & ANIMATION LOOP
+    // ============================================================================
+    function onResize() {
+      const rect = document.getElementById('viewport-area').getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / Math.max(1, rect.height);
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', onResize);
+
+    applyPresetByIndex(0);
+    onResize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
