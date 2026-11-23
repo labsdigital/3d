@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3DS - Modern 3D Modeling Studio</title>
+    <!-- Favicon: emblem Tri-Axis 3DS -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%2310b981'/%3E%3Cstop offset='.5' stop-color='%232dd4bf'/%3E%3Cstop offset='1' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cg fill='none' stroke='%23020617' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M32 10v22l18 11M32 32L14 43'/%3E%3C/g%3E%3Cg fill='%23020617'%3E%3Ccircle cx='32' cy='32' r='6'/%3E%3Ccircle cx='32' cy='10' r='4'/%3E%3Ccircle cx='50' cy='43' r='4'/%3E%3Ccircle cx='14' cy='43' r='4'/%3E%3C/g%3E%3C/svg%3E">
+    <meta name="theme-color" content="#090d16">
+    <script>
+        // Terapkan tema sebelum halaman dirender agar tidak berkedip
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem('3ds-theme'); } catch (e) {}
+            if (t !== 'light' && t !== 'dark') {
+                t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            }
+            document.documentElement.classList.toggle('light', t === 'light');
+            document.documentElement.dataset.theme = t;
+        })();
+    </script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Plus Jakarta Sans & JetBrains Mono -->
@@ -160,6 +175,73 @@
             border-color: transparent;
             font-weight: 800;
         }
+
+        /* ================= LIGHT MODE ================= */
+        html.light, html.light body { background-color: #eef2f7; color: #0f172a; }
+        html.light ::-webkit-scrollbar-track { background: rgba(226, 232, 240, 0.8); }
+        html.light ::-webkit-scrollbar-thumb { background: #94a3b8; }
+        html.light .glass-dock {
+            background: rgba(255, 255, 255, 0.86);
+            border-color: rgba(16, 185, 129, 0.28);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+        html.light .shape-btn, html.light .tool-btn, html.light .axis-btn {
+            background: rgba(248, 250, 252, 0.95);
+            color: #334155;
+            border-color: rgba(100, 116, 139, 0.22);
+        }
+        html.light .shape-btn:hover, html.light .tool-btn:hover:not(:disabled) {
+            background: rgba(16, 185, 129, 0.12);
+            color: #064e3b;
+            border-color: rgba(16, 185, 129, 0.55);
+        }
+        html.light .tool-btn.dimension-active { color: #b45309; }
+        html.light .tool-btn.dimension-on { color: #92400e; background: rgba(245, 158, 11, 0.18); }
+        html.light .deform-op.active { background: rgba(16, 185, 129, 0.16); color: #064e3b; border-color: #10b981; }
+        html.light .axis-btn.active { color: #042f2e; background: linear-gradient(135deg, #2dd4bf 0%, #38bdf8 100%); border-color: transparent; }
+        html.light .bottom-tab { background: rgba(241, 245, 249, 0.9); color: #475569; border-color: rgba(100, 116, 139, 0.18); }
+        html.light .bottom-tab:hover { background: #ffffff; color: #0f172a; }
+        html.light .bottom-tab.active { color: #052e16; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #34d399; }
+        html.light .transform-btn { background: rgba(241, 245, 249, 0.9); color: #475569; border-color: rgba(100, 116, 139, 0.2); }
+        html.light .transform-btn:hover { background: #ffffff; color: #0f172a; }
+        html.light .transform-btn.active { color: #042f2e; background: linear-gradient(135deg, #2dd4bf 0%, #38bdf8 100%); border-color: rgba(45, 212, 191, 0.6); }
+
+        /* Teks netral */
+        html.light .text-white:not([class*="bg-gradient"]):not(#toast-msg) { color: #0f172a; }
+        html.light .text-slate-200, html.light .text-gray-300 { color: #334155; }
+        html.light .text-slate-300 { color: #475569; }
+        html.light .text-slate-400, html.light .text-gray-400 { color: #64748b; }
+        html.light .text-gray-500 { color: #94a3b8; }
+        html.light .hover\:text-white:hover { color: #0f172a; }
+        html.light .text-emerald-300 { color: #047857; }
+        html.light .group:hover .group-hover\:text-emerald-300 { color: #047857; }
+        html.light .text-indigo-300 { color: #4338ca; }
+        html.light .text-rose-300 { color: #be123c; }
+        html.light .text-amber-300 { color: #b45309; }
+        html.light #btn-screenshot, html.light #btn-screenshot span { color: #064e3b; }
+        html.light #btn-screenshot svg { color: #059669; }
+
+        /* Latar & garis */
+        html.light .hover\:bg-white\/10:hover, html.light .hover\:bg-white\/5:hover { background-color: rgba(15, 23, 42, 0.06); }
+        html.light .bg-slate-900\/90 { background-color: #ffffff; color: #0f172a; }
+        html.light .bg-slate-800, html.light .bg-slate-800\/70 { background-color: #f1f5f9; }
+        html.light .hover\:bg-slate-700:hover { background-color: #e2e8f0; }
+        html.light .bg-slate-700, html.light .bg-slate-700\/80 { background-color: #cbd5e1; }
+        html.light .border-slate-700, html.light .border-slate-700\/80, html.light .border-slate-700\/70,
+        html.light .border-slate-600, html.light .border-slate-600\/50 { border-color: #e2e8f0; }
+        html.light .border-white\/10, html.light .border-white\/15, html.light .border-white\/20 { border-color: rgba(15, 23, 42, 0.12); }
+        html.light .bg-white\/10 { background-color: #f1f5f9; }
+        html.light .modal-card { background: #ffffff; }
+        html.light .bg-slate-950\/80 { background-color: rgba(148, 163, 184, 0.45); }
+        html.light .bg-black\/75 { background-color: rgba(100, 116, 139, 0.45); }
+        html.light #dimension-overlay > div { background: rgba(255, 255, 255, 0.94); color: #047857; border-color: #10b981; }
+
+        /* Watermark TarakaLabs */
+        #brand-credit { color: rgba(203, 213, 225, 0.55); }
+        html.light #brand-credit { color: rgba(51, 65, 85, 0.6); }
+        .theme-icon-sun { display: none; }
+        html.light .theme-icon-sun { display: block; }
+        html.light .theme-icon-moon { display: none; }
     </style>
 </head>
 <body>
@@ -277,6 +359,16 @@
 
         <!-- Right: Camera & Capture Actions -->
         <div class="flex items-center gap-2 pointer-events-auto">
+            <button id="btn-theme" class="glass-dock flex items-center gap-2 px-3 py-2.5 rounded-2xl hover:border-emerald-400/50 active:scale-95 transition text-xs font-semibold text-slate-200" title="Ganti Mode Terang / Gelap">
+                <svg class="theme-icon-moon w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>
+                </svg>
+                <svg class="theme-icon-sun w-4 h-4 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="4"/>
+                    <path stroke-linecap="round" d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+                </svg>
+                <span id="theme-label" class="hidden sm:inline">Gelap</span>
+            </button>
             <button id="btn-reset-cam" class="glass-dock flex items-center gap-2 px-3 py-2.5 rounded-2xl hover:border-emerald-400/50 active:scale-95 transition text-xs font-semibold text-slate-200" title="Reset Kamera">
                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
@@ -672,6 +764,11 @@
         </div>
     </aside>
 
+    <!-- Credit kecil kiri bawah -->
+    <div id="brand-credit" class="fixed bottom-3 left-4 z-20 pointer-events-none text-[10px] font-semibold tracking-wider">
+        TarakaLabs
+    </div>
+
     <!-- Bottom Right Status Badge (Identitas 3DS) -->
     <div class="fixed bottom-3 right-3 z-20 pointer-events-none hidden sm:flex items-center gap-2 glass-dock px-3.5 py-1.5 rounded-full text-[11px] text-slate-400">
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -736,7 +833,7 @@
 
     <!-- MODAL 2: DRAW 2D SKETCH TO 3D EXTRUDE -->
     <div id="modal-draw" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-[#1e1e1e] border border-white/15 rounded-2xl max-w-md w-full p-5 shadow-2xl">
+        <div class="modal-card bg-[#1e1e1e] border border-white/15 rounded-2xl max-w-md w-full p-5 shadow-2xl">
             <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <div>
                     <h3 class="text-base font-bold text-white">Gambar Sketsa 2D ke Objek 3D</h3>
@@ -764,7 +861,7 @@
 
     <!-- MODAL 3: 3D TEXT GENERATOR -->
     <div id="modal-text" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-[#1e1e1e] border border-white/15 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+        <div class="modal-card bg-[#1e1e1e] border border-white/15 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
             <div class="flex items-center justify-between pb-3 border-b border-white/10">
                 <h3 class="text-base font-bold text-white">Buat Teks 3D Emboss</h3>
                 <button id="btn-close-text" class="text-gray-400 hover:text-white p-1">✕</button>
@@ -797,6 +894,47 @@
         // ============================================================================
         let scene, camera, renderer, orbitControls, transformControls;
         let selectionBoxHelper;
+        let gridHelper = null;
+
+        // ============================================================================
+        // TEMA TERANG / GELAP
+        // ============================================================================
+        const SCENE_THEMES = {
+            dark:  { bg: 0x090d16, gridCenter: 0x10b981, grid: 0x1e293b, shadow: 0.25, meta: '#090d16' },
+            light: { bg: 0xeef2f7, gridCenter: 0x10b981, grid: 0xcbd5e1, shadow: 0.18, meta: '#eef2f7' }
+        };
+
+        function currentTheme() {
+            return document.documentElement.classList.contains('light') ? 'light' : 'dark';
+        }
+
+        function applySceneTheme() {
+            const t = SCENE_THEMES[currentTheme()];
+            const label = document.getElementById('theme-label');
+            if (label) label.textContent = currentTheme() === 'light' ? 'Terang' : 'Gelap';
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', t.meta);
+            if (!scene) return;
+            scene.background = new THREE.Color(t.bg);
+            if (gridHelper) {
+                scene.remove(gridHelper);
+                gridHelper.geometry.dispose();
+                gridHelper.material.dispose();
+            }
+            gridHelper = new THREE.GridHelper(60, 60, t.gridCenter, t.grid);
+            gridHelper.rotation.x = Math.PI / 2; // lantai di bidang XY (Z-up)
+            gridHelper.name = 'FloorGrid';
+            scene.add(gridHelper);
+            const floor = scene.getObjectByName('ShadowFloor');
+            if (floor) floor.material.opacity = t.shadow;
+        }
+
+        function setTheme(theme) {
+            document.documentElement.classList.toggle('light', theme === 'light');
+            document.documentElement.dataset.theme = theme;
+            try { localStorage.setItem('3ds-theme', theme); } catch (e) {}
+            applySceneTheme();
+        }
         const objects = []; // Daftar mesh 3D yang dibuat pengguna
         let selectedObject = null;
         let multiSelectedObjects = []; // Mendukung multi-seleksi untuk Merge / Subtract
@@ -828,8 +966,10 @@
 
             // 2. Camera
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(11, 8, 14);
-            camera.lookAt(0, 1, 0);
+            // Sistem koordinat Z-up: sumbu Z mengarah ke atas
+            camera.up.set(0, 0, 1);
+            camera.position.set(11, -14, 8);
+            camera.lookAt(0, 0, 1);
 
             // 3. Renderer (preserveDrawingBuffer diperlukan untuk fitur Screenshot)
             renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -844,7 +984,7 @@
             scene.add(ambientLight);
 
             const mainDirLight = new THREE.DirectionalLight(0xffffff, 0.75);
-            mainDirLight.position.set(18, 28, 20);
+            mainDirLight.position.set(18, -20, 28);
             mainDirLight.castShadow = true;
             mainDirLight.shadow.mapSize.width = 2048;
             mainDirLight.shadow.mapSize.height = 2048;
@@ -858,20 +998,16 @@
             scene.add(mainDirLight);
 
             const backLight = new THREE.DirectionalLight(0x818cf8, 0.35);
-            backLight.position.set(-15, 10, -15);
+            backLight.position.set(-15, 15, 10);
             scene.add(backLight);
 
             // 5. Emerald-Teal CAD Studio Floor Grid khas 3DS
-            const gridHelper = new THREE.GridHelper(60, 60, 0x10b981, 0x1e293b);
-            gridHelper.position.y = 0;
-            gridHelper.name = 'FloorGrid';
-            scene.add(gridHelper);
+            // Grid lantai dibuat sesuai tema aktif (lihat applySceneTheme)
 
             // Shadow Catcher Floor Plane
             const shadowFloorGeo = new THREE.PlaneGeometry(60, 60);
             const shadowFloorMat = new THREE.ShadowMaterial({ opacity: 0.25 });
             const shadowFloor = new THREE.Mesh(shadowFloorGeo, shadowFloorMat);
-            shadowFloor.rotation.x = -Math.PI / 2;
             shadowFloor.receiveShadow = true;
             shadowFloor.name = 'ShadowFloor';
             scene.add(shadowFloor);
@@ -881,7 +1017,7 @@
             orbitControls.enableDamping = true;
             orbitControls.dampingFactor = 0.08;
             orbitControls.maxPolarAngle = Math.PI / 2 + 0.15;
-            orbitControls.target.set(0, 1, 0);
+            orbitControls.target.set(0, 0, 1);
 
             // 7. TransformControls (Gizmo 3D)
             transformControls = new THREE.TransformControls(camera, renderer.domElement);
@@ -923,11 +1059,11 @@
 
             // Objek Starter 3DS: Kubus Biru & Silinder Merah
             const blueCube = createPrimitiveMesh('cube', '#3b82f6');
-            blueCube.position.set(-1.3, 1.0, 1.2);
+            blueCube.position.set(-1.3, -1.2, 1.0);
             registerObject(blueCube, '3DS Box');
 
             const redCylinder = createPrimitiveMesh('cylinder', '#ef4444');
-            redCylinder.position.set(1.5, 1.1, -0.6);
+            redCylinder.position.set(1.5, 0.6, 1.1);
             registerObject(redCylinder, '3DS Cylinder');
 
             selectObject(blueCube);
@@ -955,7 +1091,7 @@
                     break;
                 case 'torus':
                     geometry = new THREE.TorusGeometry(1.05, 0.38, 20, 48);
-                    geometry.rotateX(Math.PI / 2);
+                    geometry.rotateX(-Math.PI / 2); // tetap rebah di lantai (bidang XY) setelah konversi Z-up
                     break;
                 case 'triprism':
                     geometry = new THREE.CylinderGeometry(1.2, 1.2, 2.0, 3);
@@ -969,6 +1105,8 @@
                 default:
                     geometry = new THREE.BoxGeometry(2, 2, 2);
             }
+            // Konversi Y-up -> Z-up: sumbu tinggi primitif dipindah ke Z
+            geometry.rotateX(Math.PI / 2);
 
             const material = new THREE.MeshStandardMaterial({
                 color: new THREE.Color(colorHex),
@@ -988,20 +1126,20 @@
         function addShapeToScene(type) {
             const mesh = createPrimitiveMesh(type, currentColor);
 
-            // Hitung tinggi objek agar duduk rapi di atas lantai (Y = 0)
+            // Hitung tinggi objek agar duduk rapi di atas lantai (Z = 0)
             mesh.geometry.computeBoundingBox();
             const bbox = mesh.geometry.boundingBox;
-            const height = (bbox.max.y - bbox.min.y);
+            const height = (bbox.max.z - bbox.min.z);
 
             // Jika ada objek terpilih, letakkan sedikit di sebelahnya agar tidak bertumpuk persis
             let offsetX = (Math.random() - 0.5) * 1.6;
-            let offsetZ = (Math.random() - 0.5) * 1.6;
+            let offsetY = (Math.random() - 0.5) * 1.6;
             if (objects.length === 0) {
                 offsetX = 0;
-                offsetZ = 0;
+                offsetY = 0;
             }
 
-            mesh.position.set(offsetX, height / 2, offsetZ);
+            mesh.position.set(offsetX, offsetY, height / 2);
             const label = type.charAt(0).toUpperCase() + type.slice(1) + ' ' + (shapeCounter++);
             registerObject(mesh, label);
             selectObject(mesh);
@@ -1131,12 +1269,12 @@
             const lblD = document.getElementById('dim-label-d');
 
             lblW.textContent = `X: ${size.x.toFixed(2)}`;
-            lblH.textContent = `Y: ${size.y.toFixed(2)}`;
-            lblD.textContent = `Z: ${size.z.toFixed(2)}`;
+            lblH.textContent = `Z: ${size.z.toFixed(2)}`;
+            lblD.textContent = `Y: ${size.y.toFixed(2)}`;
 
-            const posW = new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, box.max.z + 0.3);
-            const posH = new THREE.Vector3(box.max.x + 0.3, (box.min.y + box.max.y) / 2, box.max.z);
-            const posD = new THREE.Vector3(box.max.x + 0.3, box.min.y, (box.min.z + box.max.z) / 2);
+            const posW = new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y - 0.3, box.min.z);
+            const posH = new THREE.Vector3(box.max.x + 0.3, box.min.y, (box.min.z + box.max.z) / 2);
+            const posD = new THREE.Vector3(box.max.x + 0.3, (box.min.y + box.max.y) / 2, box.min.z);
 
             projectToScreen(posW, lblW);
             projectToScreen(posH, lblH);
@@ -1262,7 +1400,7 @@
             const clonedMat = selectedObject.material.clone();
             const cloneMesh = new THREE.Mesh(clonedGeo, clonedMat);
 
-            cloneMesh.position.copy(selectedObject.position).add(new THREE.Vector3(0.8, 0, 0.8));
+            cloneMesh.position.copy(selectedObject.position).add(new THREE.Vector3(0.8, -0.8, 0));
             cloneMesh.rotation.copy(selectedObject.rotation);
             cloneMesh.scale.copy(selectedObject.scale);
             cloneMesh.castShadow = true;
@@ -1708,10 +1846,10 @@
         const AXIS_INDEX = { x: 0, y: 1, z: 2 };
         const DEFORM_OPS = {
             skew:    { label: 'Skew',    desc: 'Miringkan objek (shear)',         axes: ['x', 'y', 'z'], axis: 'x', min: -60, max: 60, step: 1, def: 0, unit: '°', amountLabel: 'Sudut miring', subdiv: false },
-            bend:    { label: 'Bend',    desc: 'Lengkungkan sepanjang sumbu',     axes: ['x', 'y', 'z'], axis: 'y', min: -180, max: 180, step: 1, def: 0, unit: '°', amountLabel: 'Sudut lengkung', subdiv: true },
-            twist:   { label: 'Twist',   desc: 'Puntir di sekitar sumbu',         axes: ['x', 'y', 'z'], axis: 'y', min: -360, max: 360, step: 5, def: 0, unit: '°', amountLabel: 'Sudut puntir', subdiv: true },
-            taper:   { label: 'Taper',   desc: 'Runcingkan / lebarkan ujung',     axes: ['x', 'y', 'z'], axis: 'y', min: -1, max: 0.95, step: 0.05, def: 0, unit: '', amountLabel: 'Faktor taper', subdiv: false },
-            extrude: { label: 'Extrude', desc: 'Tarik permukaan searah sumbu',    axes: ['+x', '-x', '+y', '-y', '+z', '-z'], axis: '+y', min: -1.5, max: 3, step: 0.05, def: 0, unit: ' u', amountLabel: 'Jarak tarik', subdiv: false },
+            bend:    { label: 'Bend',    desc: 'Lengkungkan sepanjang sumbu',     axes: ['x', 'y', 'z'], axis: 'z', min: -180, max: 180, step: 1, def: 0, unit: '°', amountLabel: 'Sudut lengkung', subdiv: true },
+            twist:   { label: 'Twist',   desc: 'Puntir di sekitar sumbu',         axes: ['x', 'y', 'z'], axis: 'z', min: -360, max: 360, step: 5, def: 0, unit: '°', amountLabel: 'Sudut puntir', subdiv: true },
+            taper:   { label: 'Taper',   desc: 'Runcingkan / lebarkan ujung',     axes: ['x', 'y', 'z'], axis: 'z', min: -1, max: 0.95, step: 0.05, def: 0, unit: '', amountLabel: 'Faktor taper', subdiv: false },
+            extrude: { label: 'Extrude', desc: 'Tarik permukaan searah sumbu',    axes: ['+x', '-x', '+y', '-y', '+z', '-z'], axis: '+z', min: -1.5, max: 3, step: 0.05, def: 0, unit: ' u', amountLabel: 'Jarak tarik', subdiv: false },
             inflate: { label: 'Inflate', desc: 'Gembungkan / cekungkan bentuk',   axes: [], axis: null, min: -1, max: 1, step: 0.05, def: 0, unit: '', amountLabel: 'Kekuatan', subdiv: true },
             noise:   { label: 'Noise',   desc: 'Permukaan acak organik',          axes: [], axis: null, min: 0, max: 0.5, step: 0.01, def: 0, unit: '', amountLabel: 'Amplitudo', subdiv: true },
             array:   { label: 'Array',   desc: 'Gandakan berderet di sumbu',      axes: ['x', 'y', 'z'], axis: 'x', min: 2, max: 12, step: 1, def: 3, unit: ' buah', amountLabel: 'Jumlah total', preview: false, applyLabel: 'Buat Array' },
@@ -1918,8 +2056,8 @@
 
             switch (op) {
                 case 'skew': {
-                    // Geser komponen sumbu terpilih berdasarkan ketinggian (Y), atau X jika sumbu = Y
-                    const h = a === 1 ? 0 : 1;
+                    // Geser komponen sumbu terpilih berdasarkan ketinggian (Z), atau X jika sumbu = Z
+                    const h = a === 2 ? 0 : 2;
                     const k = Math.tan(THREE.MathUtils.degToRad(amount));
                     for (let i = 0; i < N; i++) arr[i * 3 + a] += k * (arr[i * 3 + h] - c[h]);
                     break;
@@ -1927,7 +2065,7 @@
                 case 'bend': {
                     const theta = THREE.MathUtils.degToRad(amount);
                     if (Math.abs(theta) < 1e-4) break;
-                    const b = a === 1 ? 0 : 1; // arah lengkungan
+                    const b = a === 2 ? 0 : 2; // arah lengkungan
                     const R = L / theta;
                     for (let i = 0; i < N; i++) {
                         const s = arr[i * 3 + a] - min[a];
@@ -2284,7 +2422,7 @@
                 case 'floor': {
                     obj.updateMatrixWorld(true);
                     const box = new THREE.Box3().setFromObject(obj);
-                    obj.position.y -= box.min.y;
+                    obj.position.z -= box.min.z;
                     showToast('Objek diletakkan di lantai');
                     break;
                 }
@@ -2591,6 +2729,7 @@
                     bevelSegments: 2
                 });
                 extrudeGeo.center();
+                extrudeGeo.rotateX(Math.PI / 2); // berdiri tegak di sistem Z-up
 
                 const mat = new THREE.MeshStandardMaterial({
                     color: new THREE.Color(currentColor),
@@ -2598,7 +2737,7 @@
                     metalness: 0.1
                 });
                 const mesh = new THREE.Mesh(extrudeGeo, mat);
-                mesh.position.set(0, 1.2, 0);
+                mesh.position.set(0, 0, 1.2);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
 
@@ -2636,6 +2775,7 @@
             const texture = new THREE.CanvasTexture(tCanvas);
             const width = Math.max(2.2, cleanText.length * 0.55);
             const geo = new THREE.BoxGeometry(width, 1.2, 0.45);
+            geo.rotateX(Math.PI / 2); // muka teks menghadap -Y, tinggi di Z
 
             const sideMat = new THREE.MeshStandardMaterial({
                 color: new THREE.Color(currentColor),
@@ -2650,7 +2790,7 @@
 
             // Gunakan material utama agar mudah diganti warnanya juga
             const mesh = new THREE.Mesh(geo, frontMat);
-            mesh.position.set(0, 0.6, 0);
+            mesh.position.set(0, 0, 0.6);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
 
@@ -2672,12 +2812,12 @@
                 registerObject(m, name);
                 return m;
             };
-            addPart('cylinder', '#64748b', [-0.55, 0.7, 0], [0.35, 0.65, 0.35], 'Left Leg');
-            addPart('cylinder', '#64748b', [0.55, 0.7, 0], [0.35, 0.65, 0.35], 'Right Leg');
-            addPart('cube', '#2b88d8', [0, 2.3, 0], [1.1, 1.2, 0.75], 'Robot Body');
-            addPart('cube', '#38bdf8', [0, 4.0, 0], [0.85, 0.75, 0.75], 'Robot Head');
-            addPart('sphere', '#facc15', [-0.3, 4.1, 0.75], [0.18, 0.18, 0.18], 'Left Eye');
-            const last = addPart('sphere', '#facc15', [0.3, 4.1, 0.75], [0.18, 0.18, 0.18], 'Right Eye');
+            addPart('cylinder', '#64748b', [-0.55, 0, 0.7], [0.35, 0.35, 0.65], 'Left Leg');
+            addPart('cylinder', '#64748b', [0.55, 0, 0.7], [0.35, 0.35, 0.65], 'Right Leg');
+            addPart('cube', '#2b88d8', [0, 0, 2.3], [1.1, 0.75, 1.2], 'Robot Body');
+            addPart('cube', '#38bdf8', [0, 0, 4.0], [0.85, 0.75, 0.75], 'Robot Head');
+            addPart('sphere', '#facc15', [-0.3, -0.75, 4.1], [0.18, 0.18, 0.18], 'Left Eye');
+            const last = addPart('sphere', '#facc15', [0.3, -0.75, 4.1], [0.18, 0.18, 0.18], 'Right Eye');
             selectObject(last);
             saveHistoryState();
             showToast('Template Mini Robot dimuat');
@@ -2686,18 +2826,18 @@
         function loadHousePreset() {
             clearAllObjects(false);
             const walls = createPrimitiveMesh('cube', '#f8fafc');
-            walls.position.set(0, 1.2, 0);
-            walls.scale.set(1.6, 1.2, 1.4);
+            walls.position.set(0, 0, 1.2);
+            walls.scale.set(1.6, 1.4, 1.2);
             registerObject(walls, 'Walls');
 
             const roof = createPrimitiveMesh('pyramid', '#ef4444');
-            roof.position.set(0, 3.3, 0);
-            roof.scale.set(1.85, 1.0, 1.65);
+            roof.position.set(0, 0, 3.3);
+            roof.scale.set(1.85, 1.65, 1.0);
             registerObject(roof, 'Roof');
 
             const door = createPrimitiveMesh('cube', '#78350f');
-            door.position.set(0, 0.65, 1.42);
-            door.scale.set(0.35, 0.65, 0.08);
+            door.position.set(0, -1.42, 0.65);
+            door.scale.set(0.35, 0.08, 0.65);
             registerObject(door, 'Door');
 
             selectObject(roof);
@@ -2721,6 +2861,7 @@
             if (objects.length === 0) return showToast('Scene masih kosong');
             const exportGroup = new THREE.Group();
             objects.forEach((o) => exportGroup.add(o.clone()));
+            exportGroup.updateMatrixWorld(true);
             const exporter = new THREE.STLExporter();
             const result = exporter.parse(exportGroup, { binary: true });
             downloadBlob(new Blob([result], { type: 'application/octet-stream' }), '3ds-model.stl');
@@ -2731,6 +2872,8 @@
             if (objects.length === 0) return showToast('Scene masih kosong');
             const exportGroup = new THREE.Group();
             objects.forEach((o) => exportGroup.add(o.clone()));
+            exportGroup.rotation.x = -Math.PI / 2; // OBJ memakai konvensi Y-up
+            exportGroup.updateMatrixWorld(true);
             const exporter = new THREE.OBJExporter();
             const result = exporter.parse(exportGroup);
             downloadBlob(new Blob([result], { type: 'text/plain' }), '3ds-model.obj');
@@ -2746,6 +2889,7 @@
                 cloned.material = o.material.clone();
                 exportGroup.add(cloned);
             });
+            exportGroup.rotation.x = -Math.PI / 2; // glTF memakai konvensi Y-up
             const exporter = new THREE.GLTFExporter();
             exporter.parse(
                 exportGroup,
@@ -2805,7 +2949,7 @@
                     geometry.center();
                     const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(currentColor), roughness: 0.4 });
                     const mesh = new THREE.Mesh(geometry, mat);
-                    mesh.position.set(0, 1.5, 0);
+                    mesh.position.set(0, 0, 1.5);
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
                     registerObject(mesh, file.name.replace(/\.[^/.]+$/, ''));
@@ -2822,10 +2966,11 @@
                     objGroup.traverse((child) => {
                         if (child.isMesh) {
                             const geom = child.geometry.clone();
+                            geom.rotateX(Math.PI / 2); // OBJ umumnya Y-up -> konversi ke Z-up
                             geom.center();
                             const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(currentColor), roughness: 0.4 });
                             const mesh = new THREE.Mesh(geom, mat);
-                            mesh.position.set(0, 1.5, 0);
+                            mesh.position.set(0, 0, 1.5);
                             mesh.castShadow = true;
                             mesh.receiveShadow = true;
                             registerObject(mesh, child.name || 'Imported OBJ');
@@ -3010,8 +3155,8 @@
             });
 
             document.getElementById('btn-reset-cam').addEventListener('click', () => {
-                camera.position.set(11, 8, 14);
-                orbitControls.target.set(0, 1, 0);
+                camera.position.set(11, -14, 8);
+                orbitControls.target.set(0, 0, 1);
                 orbitControls.update();
                 showToast('Posisi kamera direset');
             });
@@ -3129,6 +3274,12 @@
         // Jalankan aplikasi setelah halaman selesai dimuat
         window.onload = function () {
             initThreeScene();
+            applySceneTheme();
+            document.getElementById('btn-theme').addEventListener('click', () => {
+                const next = currentTheme() === 'light' ? 'dark' : 'light';
+                setTheme(next);
+                showToast(next === 'light' ? 'Mode Terang aktif' : 'Mode Gelap aktif');
+            });
             setupUIEvents();
             setupSketchDrawer();
             setupDeformPanel();
